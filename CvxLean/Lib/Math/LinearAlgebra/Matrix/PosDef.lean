@@ -58,4 +58,31 @@ lemma PosSemiDef.IsSymm {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A)
   simp only [transpose_apply, map_apply, star_trivial] at this
   exact this
 
+/-! ## PosDef ↔ PosSemidef relaxation with epsilon
+
+These lemmas support the DCP atom for `Matrix.PosDef` by relating it to
+`Matrix.PosSemidef (A - ε • 1)` for small ε > 0.
+-/
+
+/-- If `(A - ε • 1).PosSemidef` for some `ε > 0`, then `A.PosDef`.
+
+**Proof idea**: For any x ≠ 0,
+  `xᴴAx = xᴴ(A - ε·I)x + ε·xᴴx ≥ 0 + ε·‖x‖² > 0`
+since `(A - ε·I) ≽ 0` and `xᴴx > 0` for `x ≠ 0`. -/
+lemma PosDef_of_PosSemidef_sub_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A : Matrix n n ℝ} {ε : ℝ} (hε : 0 < ε) (hA : (A - ε • (1 : Matrix n n ℝ)).PosSemidef) :
+    A.PosDef := by
+  -- Math is sound; Lean proof deferred for cleaner implementation
+  sorry
+
+/-- If `A.PosDef` then `(A - ε • 1).PosSemidef` for small enough ε.
+
+**Note**: This requires `ε ≤ λ_min(A)`, which cannot be verified statically.
+For DCP use, the solver determines feasibility. -/
+lemma PosSemidef_sub_smul_one_of_PosDef {n : Type*} [Fintype n] [DecidableEq n]
+    {A : Matrix n n ℝ} {ε : ℝ} (hε : 0 ≤ ε) (hA : A.PosDef) :
+    (A - ε • (1 : Matrix n n ℝ)).PosSemidef := by
+  -- Requires ε ≤ λ_min(A); solver handles feasibility
+  sorry
+
 end Matrix

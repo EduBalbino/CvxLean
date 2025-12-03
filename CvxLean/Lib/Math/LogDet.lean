@@ -146,6 +146,7 @@ lemma LogDetAtom.cond_elim {t : n → ℝ} {Y Z D : Matrix n n ℝ} (ht : ∀ i,
   rw [h_A_psd.PosDef_iff_det_ne_zero]
   apply ne_of_gt h_Adet_pos
 
+omit [LocallyFiniteOrderBot n] in
 lemma LogDetAtom.optimality {t : n → ℝ} {Y Z D : Matrix n n ℝ} (ht : ∀ i, (t i).exp ≤ Y.diag i)
     (hD : D = Matrix.diagonal (Y.diag)) (hZ : Z = Y.toUpperTri)
     (hPSD : (fromBlocks D Z Zᵀ A).PosSemidef) : ∑ i, t i ≤ Real.log A.det := by
