@@ -2,6 +2,7 @@ import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Star.Pi
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.Data.Real.StarOrdered
 
 /-!
 More results about positive definite and positive semidefinite matrices (see
@@ -10,6 +11,26 @@ More results about positive definite and positive semidefinite matrices (see
 Note: Many lemmas that were previously here have been upstreamed to Mathlib.
 This file now contains only supplementary results.
 -/
+
+namespace CvxLean
+
+/-! ## PosDef Atom Configuration -/
+
+/-- Exponent for PosDef epsilon: ε = 10^(-n). Default: 8. -/
+register_option posDef.epsilonExp : Nat := {
+  defValue := 8
+  descr := "Exponent n for PosDef epsilon: ε = 10^(-n)"
+}
+
+/-- The epsilon value for PosDef relaxation. -/
+def posDef.epsilon : ℝ := 1e-8
+
+/-- Proof that epsilon is positive. -/
+lemma posDef.epsilon_pos : 0 < posDef.epsilon := by
+  unfold posDef.epsilon
+  norm_num
+
+end CvxLean
 
 namespace Matrix
 
@@ -58,31 +79,26 @@ lemma PosSemiDef.IsSymm {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A)
   simp only [transpose_apply, map_apply, star_trivial] at this
   exact this
 
-/-! ## PosDef ↔ PosSemidef relaxation with epsilon
+/-! ## PosDef ↔ PosSemidef relaxation -/
 
-These lemmas support the DCP atom for `Matrix.PosDef` by relating it to
-`Matrix.PosSemidef (A - ε • 1)` for small ε > 0.
--/
-
-/-- If `(A - ε • 1).PosSemidef` for some `ε > 0`, then `A.PosDef`.
-
-**Proof idea**: For any x ≠ 0,
-  `xᴴAx = xᴴ(A - ε·I)x + ε·xᴴx ≥ 0 + ε·‖x‖² > 0`
-since `(A - ε·I) ≽ 0` and `xᴴx > 0` for `x ≠ 0`. -/
+/-- If `(A - ε • 1).PosSemidef` for some `ε > 0`, then `A.PosDef`. -/
 lemma PosDef_of_PosSemidef_sub_smul_one {n : Type*} [Fintype n] [DecidableEq n]
     {A : Matrix n n ℝ} {ε : ℝ} (hε : 0 < ε) (hA : (A - ε • (1 : Matrix n n ℝ)).PosSemidef) :
     A.PosDef := by
-  -- Math is sound; Lean proof deferred for cleaner implementation
-  sorry
-
-/-- If `A.PosDef` then `(A - ε • 1).PosSemidef` for small enough ε.
-
-**Note**: This requires `ε ≤ λ_min(A)`, which cannot be verified statically.
-For DCP use, the solver determines feasibility. -/
-lemma PosSemidef_sub_smul_one_of_PosDef {n : Type*} [Fintype n] [DecidableEq n]
-    {A : Matrix n n ℝ} {ε : ℝ} (hε : 0 ≤ ε) (hA : A.PosDef) :
-    (A - ε • (1 : Matrix n n ℝ)).PosSemidef := by
-  -- Requires ε ≤ λ_min(A); solver handles feasibility
-  sorry
+  have hAH : A.IsHermitian := by
+    have h := hA.isHermitian
+    simp only [IsHermitian, conjTranspose_sub, conjTranspose_smul,
+      conjTranspose_one, star_trivial] at h ⊢
+    exact sub_left_injective h
+  refine ⟨hAH, fun x hx => ?_⟩
+  have key : star x ⬝ᵥ mulVec A x =
+      star x ⬝ᵥ mulVec (A - ε • 1) x + ε * (star x ⬝ᵥ x) := by
+    simp only [sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub, dotProduct_smul, star_trivial,
+      smul_eq_mul]
+    ring
+  rw [key]
+  have h1 : 0 ≤ star x ⬝ᵥ mulVec (A - ε • 1) x := hA.2 x
+  have h2 : 0 < star x ⬝ᵥ x := dotProduct_star_self_pos_iff.mpr hx
+  linarith [mul_pos hε h2]
 
 end Matrix

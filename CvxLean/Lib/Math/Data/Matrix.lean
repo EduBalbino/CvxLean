@@ -90,6 +90,10 @@ def covarianceMatrix {N n : ℕ} (Y : Matrix (Fin N) (Fin n) Float) (i j : Fin n
 def diagonal (x : Fin n → Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => (if i = j then x i else 0)
 
+/-- Identity matrix for Float. -/
+def one : Matrix (Fin n) (Fin n) Float :=
+  fun i j => if i = j then 1 else 0
+
 def fromBlocks {l : Type} {m : Type} {n : Type} {o : Type} {α : Type} :
     Matrix n l α → Matrix n m α → Matrix o l α → Matrix o m α → Matrix (n ⊕ o) (l ⊕ m) α :=
   fun A B C D i j =>

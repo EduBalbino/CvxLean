@@ -1,4 +1,5 @@
 import CvxLean.Command.Solve.Float.RealToFloatCmd
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 
 /-!
 # Conversion of Real to Float (library)
@@ -142,6 +143,12 @@ add_real_to_float (n m k) :
 add_real_to_float (n k i) : @HSMul.hSMul ℕ ((Fin n) → ℝ) ((Fin n) → ℝ) i k :=
   (fun (x : (Fin n) → Float) i => (OfNat.ofNat k) * (x i))
 
+add_real_to_float (n m) (i) : @HSMul.hSMul ℝ (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) i :=
+  (fun (r : Float) (M : Matrix (Fin n) (Fin m) Float) i j => r * (M i j))
+
+add_real_to_float (n m) (i) : @SMul.smul ℝ (Matrix (Fin n) (Fin m) ℝ) i :=
+  (fun (r : Float) (M : Matrix (Fin n) (Fin m) Float) i j => r * (M i j))
+
 add_real_to_float (n m k : Nat) : @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.toNatSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
@@ -203,6 +210,12 @@ add_real_to_float (n : Nat) (i1) (i2) : @Matrix.toUpperTri.{0,0} (Fin n) ℝ i1 
 add_real_to_float (n) (i) : @Inv.inv (Matrix (Fin n) (Fin n) ℝ) i :=
   @Matrix.Computable.inv n
 
+add_real_to_float (n : Nat) (i) : @One.one (Matrix (Fin n) (Fin n) ℝ) i :=
+  @Matrix.Computable.one n
+
+add_real_to_float (n m) (i) : @HSub.hSub (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) i :=
+  (fun (A B : Matrix (Fin n) (Fin m) Float) i j => A i j - B i j)
+
 end Matrix
 
 section CovarianceEstimation
@@ -211,5 +224,14 @@ add_real_to_float (N n : ℕ) : @covarianceMatrix N n :=
   @Matrix.Computable.covarianceMatrix N n
 
 end CovarianceEstimation
+
+section PosDef
+
+def posDef.epsilonFloat : Float := 1e-8
+
+add_real_to_float : posDef.epsilon :=
+  posDef.epsilonFloat
+
+end PosDef
 
 end CvxLean
