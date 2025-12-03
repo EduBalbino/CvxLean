@@ -51,7 +51,7 @@ optimality by
   have hynn := le_of_lt hy
   rw [soCone_add_sub_two_mul_of_nonneg x hynn c2] at c1
   have hz := lt_of_lt_of_le hy hyz
-  rw [div_le_iff' hz]
+  rw [div_le_iff₀' hz]
   apply le_trans c1
   apply mul_le_mul hyz (le_refl _) c2 (le_of_lt hz)
 vconditionElimination
@@ -108,7 +108,7 @@ optimality by
   rw [vec_soCone_apply_to_soCone_add_sub_two_mul] at c1i
   rw [soCone_add_sub_two_mul_of_nonneg (x i) (hynn i) (c2 i)] at c1i
   have hz := lt_of_lt_of_le (hy i) (hyz i)
-  rw [div_le_iff' hz]
+  rw [div_le_iff₀' hz]
   apply le_trans c1i
   apply mul_le_mul (hyz i) (le_refl _) (c2 i) (le_of_lt hz)
 vconditionElimination

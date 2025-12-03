@@ -53,9 +53,9 @@ private def decomposeBracketedBinder : Syntax → TermElabM (Array (Syntax × Sy
     | `(ident|$id) => return #[(id.raw, (← `(_)).raw)]
 
 /-- Get the names and types of the variables after the `optimization` keyword. -/
-def elabVars (idents : Array (TSyntax `CvxLean.Parser.minimizationVar)) :
+def elabVars (idents : Array (TSyntax `minimizationVar)) :
     TermElabM (Array (Lean.Name × Expr)) := do
-  let idents ← idents.concatMapM decomposeBracketedBinder
+  let idents ← idents.flatMapM decomposeBracketedBinder
   let idents ← idents.mapM fun (id, ty) => do
     match id with
       | Syntax.ident _ _ val _ => return (val, ← Term.elabTerm ty none)
@@ -63,11 +63,11 @@ def elabVars (idents : Array (TSyntax `CvxLean.Parser.minimizationVar)) :
   return idents
 
 /-- Extract names of "let" expressions after `with`. -/
-def preElabLetVars (letVars : Array (TSyntax `CvxLean.Parser.letVar)) :
+def preElabLetVars (letVars : Array (TSyntax `letVar)) :
     TermElabM (Array (Lean.Name × TSyntax `Lean.Parser.Term.letDecl)) := do
   letVars.mapM fun stx =>
     match stx with
-      | `(CvxLean.Parser.letVar| with $letD:letDecl) =>
+      | `(letVar| with $letD:letDecl) =>
           match letD with
           | `(letDecl| $id:ident := $_) => return (id.getId, letD)
           | _ => throwParserError "expected identified let declaration got {letD}."
@@ -75,16 +75,14 @@ def preElabLetVars (letVars : Array (TSyntax `CvxLean.Parser.letVar)) :
 
 /-- Extract names and terms of constraints. We do it in two steps so that we can insert lets if
 needed. -/
-def preElabConstraints (constraints : TSyntax `CvxLean.Parser.constraints) :
+def preElabConstraints (constraints : Array (TSyntax `constraint)) :
     TermElabM (Array (Lean.Name × TSyntax `term)) := do
-  match constraints with
-  | `(CvxLean.Parser.constraints| $constrs*) => do
-      constrs.mapM fun cDecl =>
-        match cDecl with
-          | `(CvxLean.Parser.constraint| $id:ident : $c) => return (id.getId, c)
-          | `(CvxLean.Parser.constraint| _ : $c) => return (Name.anonymous, c)
-          | _ => throwParserError "expected constraint got {cDecl}."
-  | _ => throwParserError "expected constraints got {constraints}."
+  constraints.mapM fun (cDecl : TSyntax `constraint) => do
+    -- constraint syntax is: Term.binderIdent " : " term
+    match cDecl with
+    | `(constraint| $id:ident : $c:term) => return (id.getId, c)
+    | `(constraint| _ : $c:term) => return (Name.anonymous, c)
+    | _ => throwParserError s!"expected constraint got {cDecl}."
 
 macro_rules
 | `(optimization $idents* $minOrMax:minOrMax $obj) =>
@@ -102,11 +100,11 @@ partial def _root_.Lean.Syntax.gatherIdents : Syntax → Array Lean.Name
 /-- Elaborate `optimization` problem syntax, building a term of type `Minimization D R`.  -/
 @[term_elab «optimization»] def elabOptmiziation : Term.TermElab := fun stx _expectedType? => do
   match stx with
-  | `(optimization $idents* $lets:letVar* $minOrMax:minOrMax $obj subject to $constraints) =>
+  | `(optimization $idents* $lets:letVar* $minOrMax:minOrMax $obj subject to $constraints*) =>
       -- Determine names and types of the variables.
       let vars ← elabVars idents
       -- Construct domain type.
-      let domain := Meta.composeDomain vars.data
+      let domain := Meta.composeDomain vars.toList
       -- Construct let vars syntax.
       let letsStx ← preElabLetVars lets
       -- Introduce FVar for the domain.
@@ -139,7 +137,7 @@ partial def _root_.Lean.Syntax.gatherIdents : Syntax → Array Lean.Name
                   cStx := ← `(let $letD:letDecl; $cStx)
             return Meta.mkLabel n (← Term.elabTerm cStx none)
           let constraints ← mkLambdaFVars #[p] $
-            Expr.replaceFVars (Meta.composeAnd constraints.data) xs prs
+            Expr.replaceFVars (Meta.composeAnd constraints.toList) xs prs
           -- Put it all together.
           let res ← mkAppM ``Minimization.mk #[obj, constraints]
           check res
@@ -172,18 +170,24 @@ partial def delabDomain : DelabM (List (Lean.Name × Term)) := do
   | _ => return [← delabVar e]
 
 /-- Show constraint with label if it has one. -/
-partial def delabConstraint : DelabM (TSyntax ``Parser.constraint) := do
+partial def delabConstraint : DelabM (TSyntax `constraint) := do
   match ← getExpr with
   | Expr.mdata m e =>
       match m.get? `CvxLeanLabel with
       | some (name : Lean.Name) =>
-          return mkNode ``Parser.constraint
-            #[(mkIdent name).raw, mkAtom ":", (← descend e 0 do delab).raw]
+          let term ← descend e 0 delab
+          -- The syntax kind is `CvxLean.constraintIdent` (namespaced)
+          return ⟨Syntax.node SourceInfo.none `CvxLean.constraintIdent
+            #[(mkIdent name).raw, mkAtom ":", term.raw]⟩
       | none => Alternative.failure
-  | _  => return (← `(Parser.constraint|_ : $(← delab)))
+  | _ =>
+      let term ← delab
+      -- Anonymous constraint uses `_` as binderIdent
+      return ⟨Syntax.node SourceInfo.none `CvxLean.constraintIdent
+        #[mkAtom "_", mkAtom ":", term.raw]⟩
 
 /-- Show all constraints with their labels. -/
-partial def delabConstraints : DelabM (List (TSyntax ``Parser.constraint)) := do
+partial def delabConstraints : DelabM (List (TSyntax `constraint)) := do
   let e ← getExpr
   match e with
   | Expr.app (Expr.app (Expr.const `And _) _l) _r =>
@@ -209,7 +213,7 @@ partial def delabMinimization : Delab := do
   | .app (.app (.app (.app (.const `Minimization.mk _) domain) _codomain) _objFun) constraints =>
       let idents ← withType <| withNaryArg 0 do
         let tys ← delabDomain
-        let tys ← tys.mapM fun (name, stx) => do `(Parser.minimizationVar| ($(mkIdent name) : $stx))
+        let tys ← tys.mapM fun (name, stx) => do `(minimizationVar| ($(mkIdent name) : $stx))
         return tys.toArray
       let (objFun, isMax) ← withNaryArg 2 do withDomainBinding domain do
         match ← getExpr with
@@ -220,9 +224,9 @@ partial def delabMinimization : Delab := do
             return (← delab, false)
       let noConstrs ← withLambdaBody constraints fun _ constrsBody => do
         isDefEq constrsBody (mkConst ``True)
-      let constraints := ← withNaryArg 3 do
-        let cs ← withDomainBinding domain delabConstraints
-        return mkNode ``Parser.constraints #[mkNullNode <| cs.toArray.map (·.raw)]
+      let constraints ← withNaryArg 3 do
+        withDomainBinding domain delabConstraints
+      let constraintsArr := constraints.toArray
       if noConstrs then
         if isMax then
           `(optimization $idents* maximize $objFun)
@@ -230,9 +234,9 @@ partial def delabMinimization : Delab := do
           `(optimization $idents*  minimize $objFun)
       else
         if isMax then
-          `(optimization $idents* maximize $objFun subject to $constraints)
+          `(optimization $idents* maximize $objFun subject to $constraintsArr*)
         else
-          `(optimization $idents* minimize $objFun subject to $constraints)
+          `(optimization $idents* minimize $objFun subject to $constraintsArr*)
   | _ => Alternative.failure
 
 end Delab

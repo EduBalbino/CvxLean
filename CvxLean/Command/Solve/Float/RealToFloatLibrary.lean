@@ -181,7 +181,7 @@ add_real_to_float (n) (i) : @Vec.cumsum.{0} ℝ i n :=
 add_real_to_float : @Vec.norm :=
   @Vec.Computable.norm
 
-add_real_to_float (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) ℝ i1 i2 i3 :=
+add_real_to_float (n) (i1) (i2) (i3) : @dotProduct (Fin n) ℝ i1 i2 i3 :=
   @Matrix.Computable.dotProduct n
 
 add_real_to_float (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) ℝ i1 i2 :=

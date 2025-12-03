@@ -44,14 +44,14 @@ def reorderConstrsExpr (ids : Array Name) (e : Expr) : MetaM Expr := do
       throwReorderConstrsError "constraint names are not unique ({cName})."
     constrs := constrs.insert cName cExpr
   let newConstrs ← ids.mapM fun id => do
-    match constrs.find? id with
+    match constrs.get? id with
     | none => throwReorderConstrsError "unknown constraint {id}."
     | some c => return c
   if constrs.size < ids.size then
     throwReorderConstrsError "too many constraints."
   if ids.size < constrs.size then
     throwReorderConstrsError "not enough constraints."
-  return composeAnd newConstrs.data
+  return composeAnd newConstrs.toList
 
 /-- Use `reorderConstrsExpr` to obtain the target problem. Then, they should be equivalent by
 rewriting together with `tauto`. -/

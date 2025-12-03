@@ -35,21 +35,21 @@ def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
     let mut lctx ← getLCtx
     for localDecl in lctx do
       let ty := localDecl.type
-      for (le_or_lt, lemmas) in [(``LE.le, le_lemmas), (``LT.lt, lt_lemmas)] do
+      for (le_or_gt, lemmas) in [(``LE.le, le_lemmas), (``LT.lt, lt_lemmas)] do
         let ty := Expr.consumeMData ty
-        match ty.app4? le_or_lt with
+        match ty.app4? le_or_gt with
         | some (R, _, lhs, rhs) =>
             if !(← isDefEq R q(ℝ)) then
               continue
             if ← isDefEq lhs q(0 : ℝ) then
               continue
-            let le_or_lt_lemma :=
+            let le_or_gt_lemma :=
               if ← isDefEq rhs q(0 : ℝ) then lemmas[1]! else lemmas[0]!
             -- If LHS is not zero, add new hypothesis.
-            let val ← mkAppM le_or_lt_lemma #[localDecl.toExpr]
+            let val ← mkAppM le_or_gt_lemma #[localDecl.toExpr]
             let ty ← inferType val
             let n := localDecl.userName
-            hyps := hyps.push (Hypothesis.mk n ty val)
+            hyps := hyps.push { userName := n, type := ty, value := val }
         | none => continue
 
     let (_, mvarId) ← mvarId.assertHypotheses hyps
@@ -59,16 +59,16 @@ def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
     let mut mvarId := mvarId
     let le_lemmas := [``le_of_sub_nonneg, ``nonpos_of_neg_nonneg]
     let lt_lemmas := [``lt_of_sub_pos, ``neg_of_neg_pos]
-    for (le_or_lt, lemmas) in [(``LE.le, le_lemmas), (``LT.lt, lt_lemmas)] do
-      match goalExpr.app4? le_or_lt with
+    for (le_or_gt, lemmas) in [(``LE.le, le_lemmas), (``LT.lt, lt_lemmas)] do
+      match goalExpr.app4? le_or_gt with
         | some (R, _, lhs, rhs) =>
             if !(← isDefEq R q(ℝ)) then
               continue
             if ← isDefEq lhs q(0 : ℝ) then
               continue
-            let le_or_lt_lemma :=
+            let le_or_gt_lemma :=
               if ← isDefEq rhs q(0 : ℝ) then lemmas[1]! else lemmas[0]!
-            if let [g] ← mvarId.applyConst le_or_lt_lemma then
+            if let [g] ← mvarId.applyConst le_or_gt_lemma then
               mvarId := g
               break
             else
@@ -103,12 +103,14 @@ elab (name := positivity) "positivity_maybe_norm_num" : tactic =>
 
 end Tactic
 
-/-- Extension of `positivity` with some pre-processing and the option to call `norm_num`. -/
+/-- Extension of `positivity` with some pre-processing and the option to call `norm_num`.
+After `prepare_positivity` transforms goals like `a < b` to `0 < b - a`, we use `ring_nf` to
+simplify expressions like `exp w + 1 - 1` to `exp w` before calling `positivity`. -/
 syntax "positivity!" : tactic
 
 macro_rules
   | `(tactic| positivity!) =>
-    `(tactic| intros; cases_and; prepare_positivity; positivity_maybe_norm_num)
+    `(tactic| intros; cases_and; prepare_positivity; try ring_nf; positivity_maybe_norm_num)
 
 /-- Combination of tactics. We try `positivity!`, then `linarith`, then `norm_num`, then `simp`. -/
 syntax "arith" : tactic

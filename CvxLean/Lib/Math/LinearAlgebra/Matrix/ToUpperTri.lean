@@ -40,6 +40,7 @@ lemma upperTriangular_toUpperTri {m : Type _} [LinearOrder m]
   rw [if_neg]
   simpa using hij
 
+omit [Fintype n] [LocallyFiniteOrderBot n] in
 lemma upperTriangular.toUpperTri_eq {A : Matrix n n ℝ}
     (hA : upperTriangular A) : A.toUpperTri = A := by
   ext i j

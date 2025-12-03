@@ -23,6 +23,7 @@ open Lean Meta Elab Tactic Term Command Minimization
 -- TODO: `StrongEquivalence`.
 inductive TransformationGoal
   | Solution | Equivalence | Reduction | Relaxation
+deriving BEq, DecidableEq, Repr
 
 namespace TransformationGoal
 
@@ -213,7 +214,7 @@ def runTransformationTactic (transf : TransformationGoal) (mvarId : MVarId) (stx
     | [] => pure ()
     | _ => reportUnsolvedGoals remainingGoals
 
-    synthesizeSyntheticMVars (mayPostpone := false)
+    synthesizeSyntheticMVars (postpone := .no)
 
 /-- Wraper that works for all defined transformations, elaborating syntax into the RHS expression
 and a proof of the relation with the LHS. The RHS can be named so that the metavariable displayed
@@ -261,7 +262,7 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName 
       modify fun s => { s with syntheticMVars := {} }
 
       match mvarDecl.kind with
-      | SyntheticMVarKind.tactic tacticCode savedContext =>
+      | SyntheticMVarKind.tactic tacticCode savedContext _ _ =>
           withSavedContext savedContext do
             runTransformationTactic transf proof.mvarId! tacticCode
       | _ =>
@@ -271,7 +272,7 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName 
       return (rhs, ← instantiateMVars proof)
     finally
       modify fun s => { s with syntheticMVars :=
-        s.syntheticMVars.mergeBy (fun _ _ a => a) syntheticMVarsSaved }
+        s.syntheticMVars.mergeWith (fun _ _ a => a) syntheticMVarsSaved }
 
 end Meta
 

@@ -43,14 +43,15 @@ reduction* red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N →
   reduction_step =>
     apply Reduction.map_domain (fwd := (·⁻¹)) (bwd := (·⁻¹))
     · intros R hR
-      simp only [nonsing_inv_nonsing_inv R hR.1.isUnit_det]
+      rw [nonsing_inv_nonsing_inv R (Matrix.PosDef.isUnit_det' hR.1)]
   -- Dissolve matrix inverse.
   conv_opt =>
-    simp only [Function.comp, Matrix.PosDef_inv_iff_PosDef]
+    simp only [Function.comp, Matrix.posDef_inv_iff]
   reduction_step =>
     apply Reduction.rewrite_objFun
     · intros R hR
-      rewrite [nonsing_inv_nonsing_inv R (hR.1.isUnit_det),
+      -- hR.1 : R.PosDef (after simp with posDef_inv_iff)
+      rewrite [nonsing_inv_nonsing_inv R (Matrix.PosDef.isUnit_det' hR.1),
         Matrix.det_nonsing_inv]
       rewrite [Real.inverse_eq_inv, Real.log_inv]
       rfl
@@ -59,7 +60,7 @@ reduction* red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N →
     · intros R
       rw [and_congr_right_iff]
       intro hR
-      rw [nonsing_inv_nonsing_inv R hR.isUnit_det]
+      rw [nonsing_inv_nonsing_inv R (Matrix.PosDef.isUnit_det' hR)]
 
 #print covEstimationConvex
 -- optimization (R : Matrix (Fin n) (Fin n) ℝ)
@@ -82,7 +83,7 @@ def Nₚ : ℕ := 4
 def αₚ : ℝ := 1
 
 @[optimization_param]
-def yₚ : Fin Nₚ → Fin nₚ → ℝ := ![![0, 2], ![2, 0], ![-2, 0], ![0, -2]]
+def yₚ : Fin Nₚ → Fin nₚ → ℝ := ![![0, 2], ![2, 0], ![-2, 0], ![0, -2] ]
 
 solve covEstimationConvex nₚ Nₚ αₚ yₚ
 

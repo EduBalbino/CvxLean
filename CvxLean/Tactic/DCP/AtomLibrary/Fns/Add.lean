@@ -12,7 +12,7 @@ bconditions
 homogenity by
   simp [mul_add]
 additivity by
-  simp only [add_zero, add_assoc, add_comm]
+  simp only [add_zero, add_assoc]
   rw [add_comm x' y', ← add_assoc y y' x', add_comm _ x']
 optimality fun _ _ => add_le_add
 

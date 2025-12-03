@@ -31,11 +31,11 @@ solutionEqualsAtom by
 feasibility
   (c : by
     dsimp
-    simp [Vec.sum_exp_eq_sum_div, div_le_iff (Real.exp_pos _)]
+    simp [Vec.sum_exp_eq_sum_div, div_le_iff₀ (Real.exp_pos _)]
     simp [Real.exp_log (Vec.sum_exp_pos hn x)])
 optimality by
   intros y hy
-  simp [Vec.sum_exp_eq_sum_div, div_le_iff (exp_pos _)] at c
+  simp [Vec.sum_exp_eq_sum_div, div_le_iff₀ (exp_pos _)] at c
   rw [← log_exp t, log_le_log_iff (Vec.sum_exp_pos hn y) (exp_pos _)]
   refine le_trans ?_ c
   apply Finset.sum_le_sum

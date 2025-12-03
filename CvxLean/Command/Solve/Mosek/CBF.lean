@@ -173,7 +173,7 @@ def fromIndexAndValue (i : Nat) (v : Float) : EncodedVector :=
 
 def fromArray (a : Array Float) : EncodedVector := Id.run <| do
   let mut ev := empty
-  for (i, ai) in a.data.enum do
+  for (ai, i) in a.toList.zipIdx do
     if ai > 0 || ai < 0 then
       ev := ev.addEntry (EncodedVectorEntry.mk i ai)
   return ev
@@ -235,8 +235,8 @@ def fromIndexAndEncodedVector (i : Nat) (ev : EncodedVector) : EncodedMatrix := 
 
 def fromArray (A : Array (Array Float)) : EncodedMatrix := Id.run <| do
   let mut em := empty
-  for (i, ai) in A.data.enum do
-    for (j, aij) in ai.data.enum do
+  for (ai, i) in A.toList.zipIdx do
+    for (aij, j) in ai.toList.zipIdx do
       if i >= j && (aij > 0 || aij < 0) then
         em := em.addEntry (EncodedMatrixEntry.mk i j aij)
   return em
@@ -301,9 +301,9 @@ def fromIndexAndEncodedMatrix (i : Nat) (em : EncodedMatrix) : EncodedMatrixList
 
 def fromArray (A : Array (Array (Array Float))) : EncodedMatrixList := Id.run <| do
   let mut eml := empty
-  for (i, ai) in A.data.enum do
-    for (j, aij) in ai.data.enum do
-      for (k, aijk) in aij.data.enum do
+  for (ai, i) in A.toList.zipIdx do
+    for (aij, j) in ai.toList.zipIdx do
+      for (aijk, k) in aij.toList.zipIdx do
         if j >= k && (aijk > 0 || aijk < 0) then
           eml := eml.addEntry (EncodedMatrixListEntry.mk i j k aijk)
   return eml
@@ -373,10 +373,10 @@ def fromIndexAndEncodedMatrixList (i : Nat) (eml : EncodedMatrixList) :
 def fromArray (A : Array (Array (Array (Array Float)))) :
     EncodedMatrixListList := Id.run <| do
   let mut emll := empty
-  for (i, ai) in A.data.enum do
-    for (j, aij) in ai.data.enum do
-      for (k, aijk) in aij.data.enum do
-        for (l, aijkl) in aijk.data.enum do
+  for (ai, i) in A.toList.zipIdx do
+    for (aij, j) in ai.toList.zipIdx do
+      for (aijk, k) in aij.toList.zipIdx do
+        for (aijkl, l) in aijk.toList.zipIdx do
           if k >= l && (aijkl > 0 || aijkl < 0) then
             emll := emll.addEntry (EncodedMatrixListListEntry.mk i j k l aijkl)
   return emll

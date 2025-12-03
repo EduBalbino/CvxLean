@@ -61,7 +61,7 @@ lemma diag_inv_mul_diag_eq_one_of_upperTriangular [Fintype m] [LinearOrder m]
   have h := congr_fun (congr_fun
     (toSquareBlock_inv_mul_toSquareBlock_eq_one hM k) ⟨k, rfl⟩) ⟨k, rfl⟩
   dsimp only [HMul.hMul, dotProduct] at h
-  rw [@Fintype.sum_unique _ _ _ _] at h
+  rw [Fintype.sum_unique] at h
   simp at h; rw [← h]; simp [toSquareBlock, toSquareBlockProp]; rfl
 
 lemma diag_inv_mul_diag_eq_one_of_lowerTriangular [Fintype m] [LinearOrder m]
@@ -71,7 +71,7 @@ lemma diag_inv_mul_diag_eq_one_of_lowerTriangular [Fintype m] [LinearOrder m]
   have h := congr_fun (congr_fun
     (toSquareBlock_inv_mul_toSquareBlock_eq_one hM k) ⟨k, rfl⟩) ⟨k, rfl⟩
   dsimp [HMul.hMul, dotProduct] at h
-  rw [@Fintype.sum_unique _ _ _ this] at h
+  rw [Fintype.sum_unique] at h
   simp at h; rw [← h]; simp [toSquareBlock, toSquareBlockProp]; rfl
 
 end Matrix

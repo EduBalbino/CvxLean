@@ -75,7 +75,7 @@ end SolutionExpr
 than 2 elements, it is not replaced at all.  -/
 def replaceProjections (e : Expr) (p : FVarId) (rs : Array Expr) : MetaM Expr := do
   let pre (e : Expr) : MetaM TransformStep := do
-    match ← decomposeProj e p rs.data with
+    match ← decomposeProj e p rs.toList with
     | some r => return TransformStep.done r
     | none => return TransformStep.continue
   transform e (pre := pre)
@@ -174,21 +174,21 @@ def composeAndWithProj : List Expr → (Expr × (Expr → List Expr))
       (res, prs)
 
 /-- Get a HashSet of variable names in a given domain. -/
-def getVariableNameSet (domain : Expr) : m (HashSet Name) := do
-  let mut res : HashSet Name := {}
+def getVariableNameSet (domain : Expr) : m (Std.HashSet Name) := do
+  let mut res : Std.HashSet Name := {}
   for (name, _) in ← decomposeDomain domain do
     res := res.insert name
   return res
 
 /-- Get a `HashSet` of constraint names in a given domain. -/
-def getConstraintNameSet (e : Expr) : MetaM (HashSet Name) := do
-  let mut res : HashSet Name := {}
+def getConstraintNameSet (e : Expr) : MetaM (Std.HashSet Name) := do
+  let mut res : Std.HashSet Name := {}
   for (name, _) in ← decomposeConstraints e do
     res := res.insert name
   return res
 
 /-- Generates a name that is not yet contained in `set`. -/
-partial def generateNewName (base : String) (set : HashSet Name) : MetaM Name := do
+partial def generateNewName (base : String) (set : Std.HashSet Name) : MetaM Name := do
   tryNumber 1 set
 where
   tryNumber (i : Nat) vars : MetaM Name :=

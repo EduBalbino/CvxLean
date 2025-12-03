@@ -38,12 +38,12 @@ optimality by
   unfold expCone at c
   cases c with
   | inl c =>
-      rw [mul_comm, ← neg_mul, ← div_le_iff c.1]
+      rw [mul_comm, ← neg_mul, ← div_le_iff₀ c.1]
       rw [← exp_le_exp, exp_neg, exp_log c.1, inv_eq_one_div]
-      rw [le_div_iff c.1, mul_comm]
+      rw [le_div_iff₀ c.1, mul_comm]
       exact c.2
   | inr c =>
-      simp [entr, c.1, c.2]
+      simp [c.1, c.2]
 vconditionElimination
   (cond : by
     unfold expCone at c

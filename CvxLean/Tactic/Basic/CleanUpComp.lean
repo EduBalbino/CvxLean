@@ -36,7 +36,7 @@ def cleanUpCompBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withConte
   if (← isDefEq (mkMVar g) newEqvExpr.toExpr) then
     throwError "`clean_up_comp` error: Failed to unify the goal."
   let simpComp ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp
-  let simpContext := { config := {}, simpTheorems := #[simpComp] }
+  let simpContext ← Simp.mkContext {} (simpTheorems := #[simpComp])
   if let (some newGoal, _) ← simpTarget g simpContext then
     if let _ :: _ ← evalTacticAt (← `(tactic| equivalence_rfl)) newGoal then
       throwError "`clean_up_comp` error: Failed to close the goal."

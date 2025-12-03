@@ -13,7 +13,7 @@ bconditions
 homogenity by
   ext; simp [Matrix.const]; ring
 additivity by
-  simp [Matrix.mul_add]
+  simp
 optimality le_refl _
 
 end CvxLean

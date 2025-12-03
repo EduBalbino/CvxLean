@@ -74,7 +74,7 @@ def groupCones (sections : ScalarAffineSections) (l : List CBF.Cone) : MetaM (Li
   let l := l.toArray
   let mut res := []
   let mut currIdx := 0
-  for idx in sections.data do
+  for idx in sections.toList do
     let group := l[currIdx:idx]
     if h : group.size > 0 then
       let c := group.get ⟨0, h⟩

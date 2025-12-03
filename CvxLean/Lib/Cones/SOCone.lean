@@ -21,6 +21,13 @@ variable {n m} [Fintype m] [Fintype n]
 def soCone (t : ℝ) (x : n → ℝ) : Prop :=
   sqrt (∑ i, x i ^ 2) ≤ t
 
+/-- `soCone t x` is equivalent to `l2Norm x ≤ t` for `Fin n → ℝ`. -/
+lemma soCone_iff_l2Norm_le {n : ℕ} (t : ℝ) (x : Fin n → ℝ) :
+    soCone t x ↔ Vec.l2Norm x ≤ t := by
+  unfold soCone Vec.l2Norm
+  rw [EuclideanSpace.norm_eq]
+  simp only [norm_eq_abs, sq_abs, rpow_two]
+
 /-- The `n`-dimensional rotated second-order cone
       `𝒬ᵣⁿ⁺² := { (v, w, x) | x₁² + ⋯ + xₙ² ≤ 2vw ∧ 0 ≤ v, w } ⊆ ℝ × ℝ × ℝⁿ`. -/
 def rotatedSoCone (v w : ℝ) (x : n → ℝ) : Prop :=
@@ -50,16 +57,36 @@ lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ} (h
     exact abs_le_of_sqrt_sq_add_nonneg_le hS h
   have ht : 0 ≤ t := le_trans (abs_nonneg _) habsx0t
   replace ⟨hx0t, hnx0t⟩ := abs_le.mp habsx0t
-  split_ands
-  { field_simp
-    have hrw : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by norm_cast; ring
-    rw [hrw, le_sub_iff_add_le, add_comm]
-    unfold soCone at h; norm_cast at h ⊢
-    rw [← Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
-    rw [← sqrt_le_left ht]
-    exact h }
-  { simp [le_div_iff]; linarith }
-  { simp [le_div_iff]; linarith }
+  refine ⟨?_, ?_, ?_⟩
+  · field_simp
+    -- Goal: (∑ x_1, x x_1.succ ^ 2) * √2 ^ 2 ≤ (t + x 0) * (t - x 0) * 2
+    -- Convert all ^ 2 to natural power using rpow_two
+    simp only [← rpow_two] at *
+    -- Now use the original proof structure
+    have hrw : (t + x 0) * (t - x 0) = t ^ (2:ℕ) - x 0 ^ (2:ℕ) := by ring
+    simp only [rpow_two]
+    rw [hrw]
+    unfold soCone at h
+    rw [Fin.sum_univ_succ] at h
+    have h1 : 0 ≤ ∑ i : Fin n, x i.succ ^ (2:ℕ) := Finset.sum_nonneg (fun i _ => sq_nonneg _)
+    have hsqrt2 : (√2 : ℝ) ^ (2:ℕ) = 2 := sq_sqrt (by norm_num : (2 : ℝ) ≥ 0)
+    simp only [← rpow_two] at h1
+    simp only [rpow_two] at h
+    have hsum_sq : x 0 ^ (2:ℕ) + ∑ i : Fin n, x i.succ ^ (2:ℕ) ≤ t ^ (2:ℕ) := by
+      -- Use sqrt_le_left: √x ≤ y ↔ x ≤ y ^ 2
+      rw [Real.sqrt_le_left ht] at h
+      exact h
+    -- Now: need (∑ i, x i.succ ^ 2) * √2 ^ 2 ≤ (t ^ 2 - x 0 ^ 2) * 2
+    -- We have: ∑ i, x i.succ ^ 2 ≤ t ^ 2 - x 0 ^ 2 (from hsum_sq)
+    -- And: √2 ^ 2 = 2 (from hsqrt2)
+    have hle : ∑ i : Fin n, x i.succ ^ (2:ℕ) ≤ t ^ (2:ℕ) - x 0 ^ (2:ℕ) := by linarith
+    calc (∑ i : Fin n, x i.succ ^ (2:ℕ)) * √2 ^ (2:ℕ)
+        = (∑ i : Fin n, x i.succ ^ (2:ℕ)) * 2 := by rw [hsqrt2]
+      _ ≤ (t ^ (2:ℕ) - x 0 ^ (2:ℕ)) * 2 := by linarith
+  · have h2pos : (0 : ℝ) < √2 := Real.sqrt_pos.mpr (by norm_num : (2 : ℝ) > 0)
+    rw [le_div_iff₀ h2pos]; linarith
+  · have h2pos : (0 : ℝ) < √2 := Real.sqrt_pos.mpr (by norm_num : (2 : ℝ) > 0)
+    rw [le_div_iff₀ h2pos]; linarith
 
 /-- If `(v, w, x) ∈ 𝒬ⁿ⁺²` then `u(v, w, x) ∈ 𝒬ᵣⁿ⁺¹`. -/
 def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → ℝ) : ℝ × (Fin n.succ → ℝ) :=
@@ -70,15 +97,23 @@ lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ} (h : rotat
   simp [soCone, unrotateSoCone]
   replace ⟨h, hv, hw⟩ := h
   rw [sqrt_le_iff]
-  split_ands
-  { simp [le_div_iff]; linarith }
-  { rw [Fin.sum_univ_succ]
-    simp [Matrix.vecCons]
-    rw [add_comm, ← le_sub_iff_add_le]
-    field_simp
-    have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by norm_cast; ring
-    norm_cast at hrw h
-    rwa [hrw] }
+  refine ⟨?_, ?_⟩
+  · have h2pos : (0 : ℝ) < √2 := Real.sqrt_pos.mpr (by norm_num : (2 : ℝ) > 0)
+    rw [le_div_iff₀ h2pos]; linarith
+  · rw [Fin.sum_univ_succ]
+    simp only [Matrix.vecCons, Fin.cons_zero, Fin.cons_succ]
+    -- Convert real powers to natural powers
+    simp only [rpow_two] at h ⊢
+    have hsqrt2 : (√2 : ℝ) ^ (2 : ℕ) = 2 := sq_sqrt (by norm_num : (2 : ℝ) ≥ 0)
+    -- Key identity: (v+w)² - (v-w)² = 4vw
+    have hrw : (v + w) ^ (2:ℕ) - (v - w) ^ (2:ℕ) = v * w * 4 := by ring
+    -- Goal: ((v-w)/√2)² + ∑ x_i² ≤ ((v+w)/√2)²
+    -- i.e., ∑ x_i² ≤ ((v+w)² - (v-w)²) / 2 = 2vw
+    have hdiv : ((v + w) / √2) ^ (2:ℕ) - ((v - w) / √2) ^ (2:ℕ) = v * w * 2 := by
+      field_simp
+      rw [hsqrt2, hrw]
+      ring
+    linarith
 
 end ConeConversion
 
@@ -106,7 +141,8 @@ lemma soCone_sub_add_two_mul_of_nonneg {x y : ℝ} (z : ℝ) :
   conv => lhs; unfold soCone; simp [sqrt_le_iff, ← le_sub_iff_add_le']
   apply Iff.and
   · rfl
-  · ring_nf!; rw [← neg_mul, ← div_le_iff (by norm_num)]; simp
+  · simp only [rpow_two]
+    constructor <;> intro h <;> nlinarith [sq_nonneg z, sq_nonneg (x + y), sq_nonneg (x - y)]
 
 open Real Matrix
 

@@ -7,39 +7,24 @@ problems. Syntax matching these definitions is elaborated in `CvxLean/Syntax/Min
 
 namespace CvxLean
 
-open Lean
+open Lean Parser
 
-namespace Parser
+declare_syntax_cat minimizationVar
+syntax (ident <|> bracketedBinder) : minimizationVar
 
-open Parser
+declare_syntax_cat letVar
+syntax "with " Term.letDecl : letVar
 
-def minimizationVar : Parser :=
-  leading_parser ((ident <|> Term.bracketedBinder) >> ppSpace)
+declare_syntax_cat constraint
+syntax (name := constraintIdent) Term.binderIdent " : " term : constraint
 
-def letVar : Parser :=
-  leading_parser "with " >> Term.letDecl >> ppSpace
-
-def constraint : Parser :=
-  leading_parser (ppLine >> checkColGe >> ppGroup (Term.binderIdent >> " : " >> termParser))
-
-def constraints : Parser :=
-  leading_parser manyIndent constraint
-
-def minOrMax :=
-  leading_parser "minimize " <|> "maximize "
-
-end Parser
-
-section Syntax
-
-open Parser Lean.Parser
+declare_syntax_cat minOrMax
+syntax "minimize " : minOrMax
+syntax "maximize " : minOrMax
 
 scoped syntax (name := optimization)
-  ppGroup("optimization " minimizationVar* letVar*)
-    ppLine ppGroup(minOrMax term)
-    (ppLine ppGroup("subject to " constraints))?
-  ppLine : term
-
-end Syntax
+  "optimization " minimizationVar* letVar*
+    minOrMax term
+    ("subject" "to" withPosition((colGe constraint)*))? : term
 
 end CvxLean

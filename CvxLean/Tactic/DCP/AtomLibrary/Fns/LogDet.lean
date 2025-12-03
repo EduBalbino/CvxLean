@@ -43,7 +43,6 @@ solution
 solutionEqualsAtom by
   simp only [dif_pos hA, Vec.sum, Vec.log]
   erw [Matrix.LogDetAtom.solution_eq_atom hA]
-  congr
 feasibility
   (c_exp : by
     unfold Real.Vec.expCone

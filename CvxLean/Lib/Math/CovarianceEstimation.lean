@@ -33,17 +33,16 @@ lemma prod_gaussianPdf_pos {N n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) (y : Fin
 lemma log_prod_gaussianPdf {N n : ℕ} (y : Fin N → Fin n → ℝ) (R : Matrix (Fin n) (Fin n) ℝ)
     (hR : R.PosDef) : log (∏ i : Fin N, gaussianPdf R (y i)) =
     ∑ i : Fin N, (- (log (sqrt ((2 * π) ^ n)) + log (sqrt R.det)) + - R⁻¹.quadForm (y i) / 2) := by
-  have : ∀ i,
-    i ∈ Finset.univ → gaussianPdf R (y i) ≠ 0 := fun i _ => ne_of_gt (gaussianPdf_pos _ _ hR)
+  have hne : ∀ i ∈ Finset.univ, gaussianPdf R (y i) ≠ 0 :=
+    fun i _ => ne_of_gt (gaussianPdf_pos _ _ hR)
   have sqrt_2_pi_n_R_det_ne_zero: sqrt ((2 * π) ^ n * R.det) ≠ 0 := by
-    refine' ne_of_gt (sqrt_pos.2 (mul_pos _ hR.det_pos))
+    refine ne_of_gt (sqrt_pos.2 (mul_pos ?_ hR.det_pos))
     exact (pow_pos (mul_pos (by positivity) pi_pos) _)
-  rw [log_prod Finset.univ (fun i => gaussianPdf R (y i)) this]
+  rw [Real.log_prod hne]
   unfold gaussianPdf
   apply congr_arg (Finset.sum Finset.univ)
   ext i
   rw [log_mul, log_div, sqrt_mul, log_mul, log_exp, log_one, zero_sub]
-  simp [rpow_eq_pow]
   exact ne_of_gt (sqrt_pos.2 (pow_pos (mul_pos (by positivity) pi_pos) _))
   exact ne_of_gt (sqrt_pos.2 hR.det_pos)
   exact pow_nonneg (mul_nonneg (by positivity) (le_of_lt pi_pos)) _

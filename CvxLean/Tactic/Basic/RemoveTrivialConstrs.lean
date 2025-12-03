@@ -23,12 +23,11 @@ def removeTrivialConstrsBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.
     return cs.map fun c => c.1
   let mut g := g
   for n in constrNames do
-    let eqvBuilder := removeConstrBuilder n (← `(term| (by positivity!)))
-    let gs ← Tactic.run g <|
-      Tactic.tryCatch eqvBuilder.toTactic (fun _ => do pure ())
-    if gs.length != 1 then
-      throwError "`remove_trivial_constrs` error: failed to remove {n}."
-    g := gs[0]!
+    let eqvBuilder := removeConstrBuilder n
+      (← `(term| (by first | assumption | positivity! | (simp only [sub_nonneg] at *; linarith))))
+    let gs : List MVarId ← (Tactic.run g eqvBuilder.toTactic) <|> (pure [g] : TermElabM _)
+    if gs.length == 1 then
+      g := gs[0]!
 
   let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
   if gsFinal.length != 0 then

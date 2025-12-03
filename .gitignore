@@ -14,3 +14,6 @@
 /plots
 
 /CvxLean/Command/Solve/Mosek/Path.lean
+/solver/
+/lean_releases_md/
+/scripts

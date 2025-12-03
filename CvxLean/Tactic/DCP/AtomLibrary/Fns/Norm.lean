@@ -6,36 +6,37 @@ import CvxLean.Lib.Math.Data.Vec
 /-!
 Norm atoms (convex).
 
+### L2 Norm
+
+In Mathlib 4.26+, `‖x‖` on `Fin n → ℝ` is the sup norm, not the L2 norm.
+We use `Vec.l2Norm` for the L2 norm, which is defined as `‖WithLp.toLp 2 x‖`.
+
 ### TODO
 
 This is not defined in full generality. It can be made increasing or decreasing in each `xᵢ`
 depending on the sign of `xᵢ`. Only affine arguments are accepted for now.
-
-As a first step, we should define two cases for when `x ≥ 0` and `x ≤ 0`. The issue is that in the
-optimality condition we do not assume that `x'` satisfies any conditions. So, for example, in the
-nonnegative case, we cannot prove that `∑ i, (x' i) ^ 2 ≤ ∑ i, (x i) ^ 2` just from `x' ≤ x`. We
-would need to know that `0 ≤ x'`.
 -/
 
 namespace CvxLean
 
 open Real
 
-declare_atom norm2 [convex] (n : Nat)& (x : Fin n → ℝ)? : ‖x‖ :=
+declare_atom l2norm [convex] (n : Nat)& (x : Fin n → ℝ)? : Vec.l2Norm x :=
 vconditions
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints
   (c : soCone t x)
-solution (t := ‖x‖)
+solution (t := Vec.l2Norm x)
 solutionEqualsAtom by rfl
 feasibility
   (c : by
-    unfold soCone
-    simp [Norm.norm, sqrt_eq_rpow])
+    unfold soCone Vec.l2Norm
+    rw [EuclideanSpace.norm_eq]
+    simp only [norm_eq_abs, sq_abs, rpow_two]
+    exact le_refl _)
 optimality by
-  unfold soCone at c
-  simp [Norm.norm, sqrt_eq_rpow] at c ⊢
+  rw [soCone_iff_l2Norm_le] at c
   exact c
 vconditionElimination
 
@@ -54,9 +55,6 @@ optimality by
   simp [c]
 vconditionElimination
 
-lemma norm2₂_eq_norm2 {x y : ℝ} : ‖![x, y]‖ = sqrt (x ^ 2 + y ^ 2) :=
-  by simp [Norm.norm, sqrt_eq_rpow]
-
 declare_atom Vec.norm [convex] (n : Nat)& (m : Nat)&  (x : Fin n → Fin m → ℝ)? : Vec.norm x :=
 vconditions
 implementationVars (t : Fin n → ℝ)
@@ -67,12 +65,15 @@ solution (t := Vec.norm x)
 solutionEqualsAtom by rfl
 feasibility
   (c : by
-    unfold Vec.soCone soCone; dsimp;
-    intros i; simp [Vec.norm, Norm.norm, sqrt_eq_rpow])
+    unfold Vec.soCone soCone Vec.norm Vec.l2Norm
+    simp only [EuclideanSpace.norm_eq, rpow_two, norm_eq_abs, sq_abs]
+    intro; rfl)
 optimality by
-  unfold Vec.soCone soCone at c
-  intros i; simp [Vec.norm, Norm.norm, sqrt_eq_rpow] at c ⊢
-  exact c i
+  intro j
+  have hj := c j
+  rw [soCone_iff_l2Norm_le] at hj
+  unfold Vec.norm
+  exact hj
 vconditionElimination
 
 end CvxLean

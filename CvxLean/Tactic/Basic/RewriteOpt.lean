@@ -94,7 +94,7 @@ def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId →
     if fvarIds.size == 0 then
       throwRwObjError "could not introduce optimization variables."
     let probFVarId := fvarIds[0]!
-    let gAfterShowVars ← showVars gAfterIntros (fvarIds.get! 0)
+    let gAfterShowVars ← showVars gAfterIntros fvarIds[0]!
     if shouldEval then
       if let gs@(_ :: _) ← Tactic.run gAfterShowVars (tac gAfterShowVars probFVarId) then
         trace[CvxLean.debug] "`rw_obj` could not close {gs}."

@@ -34,7 +34,7 @@ instance [ToMessageData α] [ToMessageData β] : ToMessageData (Tree α β) wher
 partial def zip [Inhabited α] [Inhabited β] [ToMessageData α] [ToMessageData β] [ToMessageData γ]
     [ToMessageData δ] : Tree α γ → Tree β δ → MetaM (Tree (α × β) (γ × δ))
   | node val₁ children₁, node val₂ children₂ => do
-      return node (val₁, val₂) (← Array.zipWithM zip children₁ children₂)
+      return node (val₁, val₂) (← Array.zipWithM' zip children₁ children₂)
   | leaf val₁, leaf val₂ => pure <| leaf (val₁, val₂)
   | t1, t2 => throwError "zipped trees do not match {t1} {t2}"
 

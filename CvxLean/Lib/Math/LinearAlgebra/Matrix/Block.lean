@@ -59,7 +59,7 @@ lemma toBlock_inverse_mul_toBlock_eq_one_of_BlockTriangular [LinearOrder α]
     rw [← toBlock_mul_eq_add, inv_mul_of_invertible M, toBlock_one_self]
   have h_zero : M.toBlock (fun i => ¬ p i) p = 0 := by
   { ext i j
-    simpa using hM (lt_of_lt_of_le j.2 (le_of_not_lt i.2)) }
+    simpa using hM (lt_of_lt_of_le j.2 (le_of_not_gt i.2)) }
   simpa [h_zero] using h_sum
 
 /-- The inverse of an upper-left subblock of a block-triangular matrix `M` is

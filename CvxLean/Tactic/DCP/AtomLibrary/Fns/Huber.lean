@@ -56,8 +56,7 @@ optimality by
       have hcx : 0 < |x| := abs_pos.mpr hxz
       have hx2w2 := mul_lt_mul hwx (le_of_lt hwx) hcx hw
       rw [← pow_two, sq_abs, ← pow_two] at hx2w2
-      have hv : 0 ≤ 2 * v := by linarith
-      have hx2w22v := add_le_add (le_of_lt hx2w2) hv
+      have _hv : 0 ≤ 2 * v := by linarith
       linarith } }
   { have h2xsub1 : 2 * |x| - 1  ≤ 2 * v + (2 * w - 1) := by linarith
     apply le_trans h2xsub1

@@ -18,8 +18,8 @@ def floatToReal (f : Float) : Expr :=
   let realOfScientific :=
     mkApp2 (mkConst ``OfScientific.ofScientific ([levelZero] : List Level))
       (mkConst ``Real) nnRatCastToOfScientific
-  match Json.Parser.num f.toString.mkIterator with
-  | Parsec.ParseResult.success _ res =>
+  match Json.Parser.num ⟨_, f.toString.startValidPos⟩ with
+  | Std.Internal.Parsec.ParseResult.success _ res =>
       let num := mkApp3 realOfScientific
         (mkNatLit res.mantissa.natAbs) (toExpr true) (mkNatLit res.exponent)
       if res.mantissa < 0 then
@@ -27,7 +27,7 @@ def floatToReal (f : Float) : Expr :=
           (mkConst ``Real) (mkConst ``Real.instNeg) num
       else num
   -- On parser error return zero.
-  | Parsec.ParseResult.error _ _ =>
+  | Std.Internal.Parsec.ParseResult.error _ _ =>
       mkApp3 realOfScientific
         (mkNatLit 0) (toExpr true) (mkNatLit 1)
 

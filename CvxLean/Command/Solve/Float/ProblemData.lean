@@ -31,11 +31,12 @@ instance : ToString ScalarConeType where
 end ScalarConeType
 
 /-- Encodes the expression `⟨X, A⟩ + ∑ i, aᵢ xᵢ + b`. -/
-structure ScalarAffine :=
-  (n m : Nat)
-  (A : Array (Array Float))
-  (a : Array Float)
-  (b : Float)
+structure ScalarAffine where
+  n : Nat
+  m : Nat
+  A : Array (Array Float)
+  a : Array Float
+  b : Float
 
 namespace ScalarAffine
 
@@ -45,10 +46,10 @@ instance : ToString ScalarAffine where
 end ScalarAffine
 
 /-- Encodies the expression `∑ i, xᵢ • Hᵢ + D`. -/
-structure MatrixAffine :=
-  (n : Nat)
-  (H : Array (Array (Array Float)))
-  (D : Array (Array Float))
+structure MatrixAffine where
+  n : Nat
+  H : Array (Array (Array Float))
+  D : Array (Array Float)
 
 namespace MatrixAffine
 
@@ -59,10 +60,10 @@ end MatrixAffine
 
 /-- Data structure storing the floating-point coefficient of the objective function and constraints
 of a problem in conic form. -/
-structure ProblemData :=
-  (objective : Option ScalarAffine)
-  (scalarAffineConstraints : Array (ScalarAffine × ScalarConeType))
-  (matrixAffineConstraints : Array MatrixAffine)
+structure ProblemData where
+  objective : Option ScalarAffine
+  scalarAffineConstraints : Array (ScalarAffine × ScalarConeType)
+  matrixAffineConstraints : Array MatrixAffine
 
 namespace ProblemData
 
@@ -75,7 +76,7 @@ instance : ToString ProblemData where
     let constraintsStr := (scalarConstraintsStr ++ matrixConstraintsStr).map
       (fun s => "* " ++ s ++ "\n")
     "Objective: " ++ toString (data.objective) ++ "\n" ++
-    "Constraints: \n" ++ String.join constraintsStr.data
+    "Constraints: \n" ++ String.join constraintsStr.toList
 
 def empty : ProblemData :=
   ProblemData.mk none #[] #[]

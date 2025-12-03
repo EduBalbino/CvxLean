@@ -28,11 +28,11 @@ feasibility
       refine ⟨h, ?_⟩
       rw [rpow_two, pow_two, ← mul_div, div_self (ne_of_lt h).symm, mul_one]
     · right
-      replace h := le_of_not_lt h
+      replace h := le_of_not_gt h
       have hxeq0 := le_antisymm h cond
       simp [hxeq0])
   (c2 : by norm_num)
-  (c3 : by simp [nonnegOrthCone, cond])
+  (c3 : by simp [cond])
 optimality by {
     unfold expCone at c1
     simp at c2
@@ -41,7 +41,7 @@ optimality by {
         rcases c1l with ⟨hxpos, hxexp⟩
         apply le_trans _ hxexp
         apply mul_le_mul_of_nonneg_left _ c3
-        rw [Real.exp_le_exp, le_div_iff hxpos]
+        rw [Real.exp_le_exp, le_div_iff₀ hxpos]
         rw [pow_two] at c2
         exact c2
     | inr c1r =>

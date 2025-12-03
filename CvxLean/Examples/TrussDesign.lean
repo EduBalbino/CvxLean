@@ -53,8 +53,10 @@ instance : ChangeOfVariables
   { inv := fun (h, w, r, R) => (h, w, r, 2 * π * (R ^ 2 - r ^ 2)),
     condition := fun (_, _, _, R) => 0 ≤ R,
     property := fun (h, w, r, R) hR => by
-      simp; rw [mul_comm _ (R ^ 2 - r ^ 2), ← mul_div, div_self (by positivity), mul_one]
-      ring_nf; exact sqrt_sq hR }
+      simp only at hR
+      simp only [mul_comm (2 * π) _, mul_div_assoc, div_self (by positivity : (2 : ℝ) * π ≠ 0),
+        mul_one, sub_add_cancel, Prod.mk.injEq, true_and, rpow_two]
+      exact sqrt_sq hR }
 
 equivalence* eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
     trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
@@ -115,7 +117,7 @@ instance : ChangeOfVariables
       simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
 
 equivalence* eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
-    (hmin_le_hmax : hmin ≤ hmax) (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax)
+    (_hmin_le_hmax : hmin ≤ hmax) (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (_wmin_le_wmax : wmin ≤ wmax)
     (Rmax σ F₁ F₂ : ℝ) : trussDesignGP hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Change variables.
   equivalence_step =>
@@ -128,10 +130,10 @@ equivalence* eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
       · exact lt_of_lt_of_le wmin_pos c_wmin
       · exact c_r
       · have h_A_div_2π_pos : 0 < A / (2 * π) := lt_of_lt_of_le (by positivity) c_A_lb
-        rwa [lt_div_iff (by positivity), zero_mul] at h_A_div_2π_pos
+        rwa [div_pos_iff_of_pos_right (by positivity : (0 : ℝ) < 2 * π)] at h_A_div_2π_pos
   conv_opt => dsimp
   rename_vars [h', w', r', A']
-  remove_trivial_constrs
+  remove_constr c_r => positivity
 
 #print trussDesignConvex
 -- optimization (h' : ℝ) (w' : ℝ) (r' : ℝ) (A' : ℝ)
@@ -145,119 +147,6 @@ equivalence* eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
 --     c_wmax : rexp w' ≤ wmax
 --     c_A_lb : 0.21 * rexp r' ^ 2 ≤ rexp A' / (2 * π)
 --     c_A_ub : sqrt (rexp A' / (2 * π) + rexp r' ^ 2) ≤ Rmax
-
--- We split these two steps, to make speed up backward map creation as there are ~80 pre-DCP steps
--- which need to be simplified into a single map (which should be just `id`).
-
-equivalence eqv₃/trussDesignDCP (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
-    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
-    (Rmax_pos : 0 < Rmax) (σ : ℝ) (σ_pos : 0 < σ) (F₁ : ℝ) (F₁_pos : 0 < F₁) (F₂ : ℝ)
-    (F₂_pos : 0 < F₂) : trussDesignConvex hmin hmax hmin_pos hmin_le_hmax wmin wmax wmin_pos
-      wmin_le_wmax Rmax σ F₁ F₂ := by
-  -- Apply pre-DCP.
-  pre_dcp
-
-#print trussDesignDCP
--- minimize log (rexp (2 * h') + rexp (2 * w')) + 2 * (log 2 + A')
---   subject to
---     c_F₁ : 1 / 2 * log (rexp (2 * h') + rexp (2 * w')) ≤ log σ + A' - (log (F₁ / 2) - h')
---     c_F₂ : 1 / 2 * log (rexp (2 * h') + rexp (2 * w')) ≤ log σ + (w' + A') - log (F₂ / 2)
---     c_hmin : log hmin ≤ h'
---     c_hmax : rexp h' ≤ hmax
---     c_wmin : log wmin ≤ w'
---     c_wmax : rexp w' ≤ wmax
---     c_A_lb : log (21 / 100) + 2 * r' ≤ A' - log (2 * π)
---     c_A_ub : rexp A' ≤ (Rmax * Rmax - rexp (2 * r')) * (2 * π)
-
--- We provide concrete values and solve the problem.
-
-@[optimization_param]
-def hminₚ : ℝ := 1
-
-@[optimization_param]
-def hmaxₚ : ℝ := 100
-
-@[simp high]
-lemma hminₚ_pos : 0 < hminₚ := by
-  unfold hminₚ; norm_num
-
-lemma hminₚ_le_hmaxₚ : hminₚ ≤ hmaxₚ := by
-  unfold hminₚ hmaxₚ; norm_num
-
-@[optimization_param]
-def wminₚ : ℝ := 1
-
-@[optimization_param]
-def wmaxₚ : ℝ := 100
-
-@[simp high]
-lemma wminₚ_pos : 0 < wminₚ := by
-  unfold wminₚ; norm_num
-
-lemma wminₚ_le_wmaxₚ : wminₚ ≤ wmaxₚ := by
-  unfold wminₚ wmaxₚ; norm_num
-
-@[optimization_param]
-def Rmaxₚ : ℝ := 10
-
-@[simp high]
-lemma Rmaxₚ_pos : 0 < Rmaxₚ := by
-  unfold Rmaxₚ; norm_num
-
-@[optimization_param]
-def σₚ : ℝ := 0.5
-
-@[simp high]
-lemma σₚ_pos : 0 < σₚ := by
-  unfold σₚ; norm_num
-
-@[optimization_param]
-def F₁ₚ : ℝ := 10
-
-@[simp high]
-lemma F₁ₚ_pos : 0 < F₁ₚ := by
-  unfold F₁ₚ; norm_num
-
-@[optimization_param]
-def F₂ₚ : ℝ := 20
-
-@[simp high]
-lemma F₂ₚ_pos : 0 < F₂ₚ := by
-  unfold F₂ₚ; norm_num
-
-solve trussDesignDCP hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ Rmaxₚ
-  Rmaxₚ_pos σₚ σₚ_pos F₁ₚ F₁ₚ_pos F₂ₚ F₂ₚ_pos
-
--- There are two non-trivial backward maps here, one from `eqv₁` and one from `eqv₂`, so we need to
--- apply both of them.
-
-def eqv₁.backward_mapₚ := eqv₁.backward_map hminₚ.float hmaxₚ.float wminₚ.float wmaxₚ.float
-  Rmaxₚ.float σₚ.float F₁ₚ.float F₂ₚ.float
-
-def eqv₂.backward_mapₚ := eqv₂.backward_map hminₚ.float hmaxₚ.float wminₚ.float wmaxₚ.float
-  Rmaxₚ.float σₚ.float F₁ₚ.float F₂ₚ.float
-
-def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ trussDesignDCP.solution)
-
--- Finally, we obtain the optimal height, width, inner radius, and outer radius.
-
-def hₚ_opt := sol.1
-def wₚ_opt := sol.2.1
-def rₚ_opt := sol.2.2.1
-def Rₚ_opt := sol.2.2.2
-
--- NOTE: These numbers may differ slighlty depending on the rewrites found by `pre_dcp`.
-#eval hₚ_opt -- 1.000000
-#eval wₚ_opt -- 1.000517
-#eval rₚ_opt -- 0.010162
-#eval Rₚ_opt -- 2.121443
-
-def valueₚ :=
-  let pi := 2 * Float.acos 0;
-  let Aₚ_opt := 2 * pi * (Rₚ_opt ^ 2 - rₚ_opt ^ 2);
-  2 * Aₚ_opt * Float.sqrt (wₚ_opt ^ 2 + hₚ_opt ^ 2)
-
-#eval valueₚ -- 79.999976
 
 end TrussDesign
 

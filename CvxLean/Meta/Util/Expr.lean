@@ -143,7 +143,7 @@ private def mkArrayAux (ty : Expr) (as : List Expr) :
 
 /-- Make expression array of given type, from array of expressions. -/
 def mkArray (ty : Expr) (as : Array Expr) : MetaM Expr :=
-  mkArrayAux ty as.data.reverse
+  mkArrayAux ty as.toList.reverse
 
 end Expr
 
@@ -163,6 +163,7 @@ def simpleAddAndCompileDefn (n : Name) (e : Expr) : MetaM Unit := do
     Declaration.defnDecl <|
       mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe) []
+  enableRealizationsForConst n
 
 /-- Wrapper of `Lean.addDecl` for definitions with some default values. -/
 def simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
@@ -170,5 +171,6 @@ def simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
     Declaration.defnDecl <|
       mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe) []
+  enableRealizationsForConst n
 
 end Lean

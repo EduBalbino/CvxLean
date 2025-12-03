@@ -10,8 +10,7 @@ namespace CvxLean
 declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=
 bconditions
 homogenity by
-  change _ * _ + _ = _ * _ - _ * _ + _ * _
-  ring
+  simp only [smul_zero, add_zero, sub_zero, smul_sub]
 additivity by
   ring
 optimality by

@@ -84,17 +84,14 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder Unit :
           mkLambdaFVars xs <| ← do
             let niceNewConstrsList ← newConstrsList.mapM (fun (n, c) => do
               return (n, ← replaceProjections c p.fvarId! xs))
-            let toErase := (oldConstrsList.get! idxToRemove).2;
+            let toErase := (oldConstrsList[idxToRemove]!).2;
             let niceToErase ← Meta.replaceProjections toErase p.fvarId! xs
             withLocalDeclsDNondep niceNewConstrsList.toArray fun cs => do
-              let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
+              let proofExpr ← Lean.Elab.Term.TermElabM.run' <| do
                 let v ← Lean.Elab.Term.elabTerm proof niceToErase
                 Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
                 instantiateMVars v
-              if let some e' := e then
-                mkLambdaFVars cs e'
-              else
-                throwError "`remove_constr` error: failed to elaborate proof."
+              mkLambdaFVars cs proofExpr
         return (idxToRemove, oldConstrsList.length, newConstrs, toShow)
 
     -- Return iff proof and the extra goal of type `c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ → cᵢ`.

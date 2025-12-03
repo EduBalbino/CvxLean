@@ -41,7 +41,7 @@ lemma Real.one_sub_one_div_sq_nonneg_of_le_one {x : ℝ} :
     have hx1 : x ≤ 1 := by linarith
     have h0x : 0 ≤ x := by positivity
     have h0x2 : 0 < x ^ (2 : ℝ) := by positivity
-    rw [le_sub_iff_add_le, zero_add, le_div_iff h0x2, one_mul]
+    rw [le_sub_iff_add_le, zero_add, le_div_iff₀ h0x2, one_mul]
     simpa [abs_eq_self.mpr h0x]
 
 @[positivity ((1 / (_ : ℝ) ^ (2 : ℝ)) - 1)]
@@ -119,7 +119,11 @@ def evalExpSubOne : PositivityExt where eval {_ _α} zα pα e := do
       pure .none
 
 lemma Real.one_sub_div_exp_pos_of_pos {x : ℝ} : 0 < x → 0 < 1 - 1 / Real.exp x :=
-  fun h => by field_simp; positivity
+  fun h => by
+    have hexp : 1 < Real.exp x := Real.one_lt_exp_iff.mpr h
+    have hexp_pos : 0 < Real.exp x := Real.exp_pos x
+    rw [sub_pos, div_lt_one hexp_pos]
+    exact hexp
 
 @[positivity (1 - (1 / (Real.exp (_ : ℝ))))]
 def evalOneSubDivExp : PositivityExt where eval {_ _α} zα pα e := do
@@ -139,7 +143,7 @@ lemma Real.scaled_sq_diff_pos_of_pos {a x : ℝ} :
     have ha1 : 1 < a := by linarith
     have hx : 0 ≤ x := by linarith
     have hx2 : 0 < x ^ (2 : ℝ) := by positivity
-    rw [sub_pos, Real.mul_rpow ha hx, ← div_lt_iff hx2, div_self (ne_of_gt hx2)]
+    rw [sub_pos, Real.mul_rpow ha hx, ← div_lt_iff₀ hx2, div_self (ne_of_gt hx2)]
     simp [ha1, abs_eq_self.mpr ha]
 
 @[positivity (((_ : ℝ) * (_ : ℝ)) ^ (2 : ℝ)) - ((_ : ℝ) ^ (2 : ℝ))]

@@ -126,17 +126,6 @@ macro_rules
 
 end BasicTactics
 
-section PreDCP
-
-/-- Throws an error coming from the `pre_dcp` tactic or any of the auxiliary functions. -/
-syntax "throwPreDCPError " (interpolatedStr(term) <|> term) : term
-
-macro_rules
-  | `(throwPreDCPError $msg:interpolatedStr) => `(throwError ("`pre_dcp` error: " ++ (m! $msg)))
-  | `(throwPreDCPError $msg:term) => `(throwError ("`pre_dcp` error: " ++ $msg))
-
-end PreDCP
-
 section DCP
 
 /-- Throws an error coming from the `declare_atom` command. -/

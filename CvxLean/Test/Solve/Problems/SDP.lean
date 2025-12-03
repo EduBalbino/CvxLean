@@ -8,11 +8,14 @@ namespace SDP
 
 open CvxLean Minimization Real
 
+attribute [local instance] Classical.propDecidable
+
 @[optimization_param]
 noncomputable def A1 : Matrix (Fin 2) (Fin 2) ℝ :=
 fun i j =>
-  (#[#[23.90853599,  0.40930502]
-   , #[ 0.79090389, 21.30303590]][i.val]!)[j.val]!
+  let arr := #[#[23.90853599,  0.40930502],
+               #[ 0.79090389, 21.30303590] ]
+  (arr[i.val]!)[j.val]!
 
 @[optimization_param]
 noncomputable def b1 : ℝ := 8.0
@@ -20,8 +23,9 @@ noncomputable def b1 : ℝ := 8.0
 @[optimization_param]
 noncomputable def C1 : Matrix (Fin 2) (Fin 2) ℝ :=
 fun i j =>
-  (#[#[0.31561605, 0.97905625]
-   , #[0.84321261, 0.06878862]][i.val]!)[j.val]!
+  let arr := #[#[0.31561605, 0.97905625],
+               #[0.84321261, 0.06878862] ]
+  (arr[i.val]!)[j.val]!
 
 noncomputable def sdp1 :=
   optimization (X : Matrix (Fin 2) (Fin 2) ℝ)

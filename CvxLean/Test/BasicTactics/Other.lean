@@ -134,13 +134,21 @@ def p :=
       c₃ : log (y - 1) ≤ 2 * sqrt x + 1
       c₄ : 3 * x + 5 * y ≤ 10
 
-equivalence* eqv3/q3 : p := by
-  change_of_variables! (v) (y ↦ v + 1)
-  change_of_variables! (w) (v ↦ exp w)
+-- Test: change_of_variables with manual condition proofs
+-- Note: Using change_of_variables (not !) to have more control over condition proofs
+equivalence eqv3/q3 : p := by
+  -- First change: y ↦ v + 1
+  change_of_variables (v) (y ↦ v + 1)
+  -- Second change: v ↦ exp w (but v is now the second variable after first change)
+  -- The condition 0 < exp w is automatically true
+  change_of_variables (w) (v ↦ exp w)
+  -- Remove the constraint c₂ : 1 < exp w + 1 (always true since exp w > 0)
   remove_constr c₂ =>
-    field_simp; arith
+    linarith [Real.exp_pos w]
+  -- Simplify c₃: log (exp w + 1 - 1) = log (exp w) = w
   rw_constr c₃ into (w ≤ 2 * sqrt x + 1) =>
-    field_simp
+    ring_nf
+    rw [Real.log_exp]
 
 end
 

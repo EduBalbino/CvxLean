@@ -38,7 +38,7 @@ feasibility
         have hypos : 0 < y := by positivity
         rw [mul_comm _ (log _), ← neg_mul, ← mul_div, div_self (ne_of_gt hx)]
         rw [mul_one, exp_neg, exp_log (div_pos hx hypos), inv_div, mul_div]
-        rw [div_le_iff hx, mul_comm]
+        rw [div_le_iff₀ hx, mul_comm]
     | inr hx =>
         replace hx := hx.symm
         right
@@ -57,10 +57,10 @@ optimality by
       have hrhs : y - x - t = -t + (y - x) := by ring
       conv => rhs; rw [hrhs]
       apply add_le_add_right
-      rw [mul_comm, ← le_div_iff c.1, neg_div]
+      rw [mul_comm, ← le_div_iff₀ c.1, neg_div]
       rw [← exp_le_exp, exp_log (div_pos hxpos hypos), exp_neg, ← inv_div]
-      rw [inv_le_inv (div_pos hypos hxpos) (exp_pos _)]
-      rw [le_div_iff hxpos, mul_comm]
+      rw [inv_le_inv₀ (div_pos hypos hxpos) (exp_pos _)]
+      rw [le_div_iff₀ hxpos, mul_comm]
       exact c.2
   | inr c =>
       simp [c.1, c.2.2]
@@ -122,12 +122,12 @@ solutionEqualsAtom by
   unfold Vec.klDiv klDiv; ext i; simp; ring
 feasibility
   (c1 : by
-    simp [Vec.klDiv, klDiv]
+    simp
     unfold Vec.expCone
     intros i
     exact (klDiv.feasibility0 (x i) (y i) (hx i) (hy i)))
   (c2 : by
-    simp [Vec.klDiv, klDiv]
+    simp
     intros i
     have h := klDiv.feasibility1 (x i) (y i) (hx i) (hy i)
     unfold nonnegOrthCone at h

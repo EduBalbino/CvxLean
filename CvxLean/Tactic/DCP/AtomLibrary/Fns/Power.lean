@@ -55,7 +55,8 @@ feasibility
     have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     have hinvnn := le_of_lt hinv
     rw [soCone_add_sub_two_of_nonneg hinvnn hxnn, rpow_neg_one]
-    field_simp)
+    field_simp
+    exact le_refl 1)
   (c2 : by
     have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     exact le_of_lt hinv)
@@ -68,7 +69,7 @@ optimality by
     | inl h => exact h
     | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
-  rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
+  rw [rpow_neg_one, inv_eq_one_div, div_le_iff₀ hypos]
   apply le_trans c1
   apply mul_le_mul_of_nonneg_left hy c2
 vconditionElimination
@@ -103,7 +104,8 @@ feasibility
     have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     have hinvnn := le_of_lt hinv
     rw [soCone_add_sub_two_of_nonneg hxnn hinvnn, rpow_neg_one]
-    field_simp)
+    field_simp
+    exact le_refl 1)
   (c2 : by
     dsimp
     have hxnn := le_of_lt hx
@@ -115,7 +117,8 @@ feasibility
     have h1nn : 0 ≤ (1 : ℝ) := by norm_num
     rw [soCone_add_sub_two_mul_of_nonneg (x ^ (-1)) hxneg2nn h1nn]
     rw [← rpow_mul hxnn]
-    field_simp)
+    field_simp
+    exact le_refl 1)
   (c3 : by
     dsimp
     rw [rpow_neg (le_of_lt hx), inv_nonneg, rpow_two]
@@ -155,7 +158,7 @@ optimality by
   -- Combine c1 and c2 appropriately to get t₀ ^ (-1) ≤ y ^ 2.
   have ht₁invx : t₁ ^ (-1 : ℝ) ≤ x := by
     rw [rpow_neg c4, rpow_one]
-    rwa [← div_le_iff ht₁pos, ← inv_eq_one_div] at c1
+    rwa [← div_le_iff₀ ht₁pos, ← inv_eq_one_div] at c1
   have ht₁invy : t₁ ^ (-1 : ℝ) ≤ y := le_trans ht₁invx hy
   have ht₁invnn := le_of_lt ht₁inv
   have ht₁neg2y2 : t₁ ^ (-2 : ℝ) ≤ y ^ (2 : ℝ) := by
@@ -163,16 +166,17 @@ optimality by
     rw [← rpow_add ht₁pos] at h
     norm_num at h
     rw [← pow_two, ← rpow_two] at h
+    rw [rpow_neg c4, rpow_two]
     exact h
   have ht₀invt₁neg2 : t₀ ^ (-1 : ℝ) ≤ t₁ ^ (-2 : ℝ) := by
     rw [mul_one] at c2
     have ht₀1 : 0 < t₀ ^ (1 : ℝ) := by rwa [rpow_one]
-    rw [rpow_neg c3, rpow_neg c4, inv_le_inv ht₀1 ht₁2pos, rpow_one]
+    rw [rpow_neg c3, rpow_neg c4, inv_le_inv₀ ht₀1 ht₁2pos, rpow_one]
     exact c2
   have ht₀invy2 := le_trans ht₀invt₁neg2 ht₁neg2y2
   -- Fit inequality to goal.
-  rw [rpow_neg hynn, inv_eq_one_div, div_le_iff hy2pos]
-  rw [mul_comm, ← div_le_iff ht₀pos, ← inv_eq_one_div]
+  rw [rpow_neg hynn, inv_eq_one_div, div_le_iff₀ hy2pos]
+  rw [mul_comm, ← div_le_iff₀ ht₀pos, ← inv_eq_one_div]
   rw [← rpow_one t₀, ← rpow_neg c3]
   exact ht₀invy2
 vconditionElimination

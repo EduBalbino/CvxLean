@@ -9,13 +9,9 @@ namespace CvxLean
 declare_atom Vec.nth [affine] (m : Nat)&  (x : Fin m → ℝ)? (i : Fin m)& : x i :=
 bconditions
 homogenity by
-  rw [Pi.zero_apply]
-  change _ * _ + _ = _ * _ + _ * _
-  ring
+  simp only [Pi.zero_apply, smul_zero, add_zero, Pi.smul_apply]
 additivity by
-  rw [Pi.zero_apply]
-  change _ + _ = _ + _ + _
-  ring
+  simp only [Pi.zero_apply, add_zero, Pi.add_apply]
 optimality le_refl _
 
 declare_atom Matrix.nth [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& :

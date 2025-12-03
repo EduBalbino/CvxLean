@@ -19,8 +19,7 @@ optimality by
   intros x' hx
   by_cases h : 0 = y
   · rw [← h, div_zero, div_zero]
-  · rw [div_le_div_right (lt_of_le_of_ne hy h)]
-    apply hx
+  · exact div_le_div_of_nonneg_right hx hy
 
 declare_atom div2 [affine] (x : ℝ)- (y : ℝ)& : x / y :=
 bconditions

@@ -22,7 +22,6 @@ instance [Preorder α] : Preorder (Matrix m n α) where
   le := fun A B => ∀ i j, A i j ≤ B i j
   le_refl := fun _ _ _ => le_refl _
   le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
-  lt_iff_le_not_le := fun _ _ => refl _
 
 def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
   fun i j => |A i j|
@@ -57,7 +56,7 @@ def toArray (A : Matrix (Fin n) (Fin n) Float) : Array (Array Float) :=
     if h : i < n then Vec.Computable.toArray (A ⟨i, h⟩) else Array.mk <| List.replicate n 0
 
 def dotProduct (v w : Fin n → Float) : Float :=
-  (Array.zipWith (Vec.Computable.toArray v) (Vec.Computable.toArray w) Float.mul).foldl Float.add 0
+  (Array.zipWith Float.mul (Vec.Computable.toArray v) (Vec.Computable.toArray w)).foldl Float.add 0
 
 infixl:72 " ⬝ᵥᶜ " => Matrix.Computable.dotProduct
 
@@ -110,8 +109,8 @@ def toUpperTri (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float
 private def minorAux (A : Matrix (Fin n.succ) (Fin n.succ) Float) (a b : Fin n.succ) :
     Matrix (Fin n) (Fin n) Float :=
   fun i j =>
-    let i' : Fin n.succ := if i.val < a.val then i else i.succ;
-    let j' : Fin n.succ := if j.val < b.val then j else j.succ;
+    let i' : Fin n.succ := if i.val < a.val then i.castSucc else i.succ;
+    let j' : Fin n.succ := if j.val < b.val then j.castSucc else j.succ;
     A i' j'
 
 def minor (A : Matrix (Fin n) (Fin n) Float) (a b : Fin n) :

@@ -54,8 +54,8 @@ def convertOpt (fullProb changeObjFun : Bool := false) (convTac : TacticM Unit) 
               throwConvOptError "failed to close {failureLocation} subgoals."
             else
             -- Introduce optimization variables.
-            if let [gToConv] ← evalTacticAt (← `(conv| ext $(mkIdent `p))) gToChange then
-              if let [gToConv] ← evalTacticAt (← `(conv| show_vars $(mkIdent `p))) gToConv then
+            if let [gToConv] ← evalTacticAt (← `(conv| ext p)) gToChange then
+              if let [gToConv] ← evalTacticAt (← `(conv| show_vars p)) gToConv then
                 pure gToConv
               else
                 throwConvOptError "failed to show optimization variables."

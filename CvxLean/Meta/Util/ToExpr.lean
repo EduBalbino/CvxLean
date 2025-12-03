@@ -10,8 +10,8 @@ open Lean
 
 instance : ToExpr Float where
   toExpr f :=
-    match Json.Parser.num f.toString.mkIterator with
-    | Parsec.ParseResult.success _ res =>
+    match Json.Parser.num ⟨_, f.toString.startValidPos⟩ with
+    | Std.Internal.Parsec.ParseResult.success _ res =>
         let e :=
           mkApp5
             (mkConst ``OfScientific.ofScientific [levelZero])
@@ -24,13 +24,12 @@ instance : ToExpr Float where
           mkApp (mkConst ``Float.neg) e
         else
           e
-    | Parsec.ParseResult.error _ _  =>
+    | Std.Internal.Parsec.ParseResult.error _ _ =>
         mkApp (mkConst ``Float.ofNat) (toExpr (0 : Nat))
   toTypeExpr := mkConst ``Float
 
-instance {n} : ToExpr (Fin n) where
-  toExpr x := mkApp (mkConst ``Fin.ofNat) (toExpr x.val)
-  toTypeExpr := mkApp (mkConst ``Fin) (toExpr n)
+-- Note: ToExpr (Fin n) is provided by Lean's standard library.
+-- A previous custom instance was incorrect (missing n and NeZero arguments to Fin.ofNat).
 
 instance : ToExpr (Array Float) := by infer_instance
 

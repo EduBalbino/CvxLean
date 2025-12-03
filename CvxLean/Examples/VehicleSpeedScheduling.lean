@@ -27,7 +27,7 @@ variable (smin smax : Fin n → ℝ)
 -- Fuel use function (input is speed).
 variable (F : ℝ → ℝ)
 
-open FinsetInterval
+open Finset
 
 def vehSpeedSched [Fact (0 < n)] :=
   optimization (s : Fin n → ℝ)
@@ -35,8 +35,8 @@ def vehSpeedSched [Fact (0 < n)] :=
     subject to
       c_smin : ∀ i, smin i ≤ s i
       c_smax : ∀ i, s i ≤ smax i
-      c_τmin : ∀ i, τmin i ≤ ∑ j in [[0, i]], d j / s j
-      c_τmax : ∀ i, ∑ j in [[0, i]], d j / s j ≤ τmax i
+      c_τmin : ∀ i, τmin i ≤ ∑ j ∈ Icc 0 i, d j / s j
+      c_τmax : ∀ i, ∑ j ∈ Icc 0 i, d j / s j ≤ τmax i
 
 variable {n}
 
@@ -47,7 +47,7 @@ private lemma simp_vec_fraction (h_d_pos : StrongLT 0 d) (s : Fin n → ℝ) (i 
   rw [← div_mul, div_self h_di_nonzero, one_mul]
 
 private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
-    ∑ j in [[0, i]], t j = Vec.cumsum t i := by
+    ∑ j ∈ Icc 0 i, t j = Vec.cumsum t i := by
   simp [Vec.cumsum]; split_ifs
   · rfl
   · linarith [hn.out]
@@ -119,7 +119,8 @@ equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
   rw_obj into (Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t)) =>
     congr; funext i; unfold Vec.map; dsimp
     have h_ti_pos : 0 < t i := c_t i
-    field_simp; ring
+    simp only [rpow_two, one_div]
+    field_simp
   -- Rewrite linear constraints.
   rw_constr c_smin into (smin * t ≤ d) =>
     rw [Vec.le_div_iff c_t]
@@ -198,6 +199,7 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
+set_option maxHeartbeats 400000 in
 solve vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
 
 #eval vehSpeedSchedQuadratic.status   -- "PRIMAL_AND_DUAL_FEASIBLE"

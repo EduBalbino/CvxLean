@@ -270,14 +270,14 @@ def elabSols (argDecls : Array LocalDecl) (impVars : Array (Name × Expr))
     let impVarNames := impVars.map (·.fst)
     let mut solMap : Std.HashMap Name Expr := {}
     for stx in solStx do
-      let id ← match impVarMap.find? stx[1].getId with
+      let id ← match impVarMap.get? stx[1].getId with
         | some id => pure id
         | none => throwAtomDeclarationError "unknown variable in solution {stx[1].getId}."
       let ty := mkAppNBeta id xs
       solMap := solMap.insert stx[1].getId <|
         ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some ty)
     let sols ← impVarNames.mapM
-      fun n => match solMap.find? n with
+      fun n => match solMap.get? n with
         | some sol => pure sol
         | none => throwAtomDeclarationError "solution not found for {n}."
     let sols ← sols.mapM (do return ← mkLambdaFVars xs ·)
@@ -402,7 +402,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl)
           let mut vcondElimMap : Std.HashMap Name Expr := {}
           for i in [:stx.size] do
             let ty ← shiftingArgs curv xs argKinds fun monoXs ys => do
-              let id ← match vcondMap.find? (stx[i]!)[1]!.getId with
+              let id ← match vcondMap.get? (stx[i]!)[1]!.getId with
                 | some id => pure id
                 | none =>
                     throwAtomDeclarationError "unknown variable condition {(stx[i]!)[1]!.getId}."
@@ -413,7 +413,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl)
             let vcondElim ← mkLambdaFVars (xs ++ vs ++ is) vcondElim
             vcondElimMap := vcondElimMap.insert (stx[i]!)[1]!.getId vcondElim
           return ← vconds.mapM
-            fun (n, _) => match vcondElimMap.find? n with
+            fun (n, _) => match vcondElimMap.get? n with
               | some vcond => pure vcond
               | none => throwAtomDeclarationError "variable condition {n} not found."
 

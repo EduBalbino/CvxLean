@@ -6,6 +6,8 @@ import CvxLean.Tactic.Basic.ChangeOfVariables
 Testing changes of variables.
 -/
 
+namespace CvxLean.Test.BasicTactics.ChangeOfVariables
+
 open CvxLean
 
 noncomputable section ChangeOfVariablesInstances
@@ -50,3 +52,5 @@ reduction eqv3/q3 : p := by
   change_of_variables (u) (x ↦ (1 : ℝ) / u)
 
 #print q3
+
+end CvxLean.Test.BasicTactics.ChangeOfVariables

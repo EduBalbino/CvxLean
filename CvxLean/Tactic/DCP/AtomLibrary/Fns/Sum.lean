@@ -50,10 +50,10 @@ bconditions
 homogenity by
   unfold Matrix.sum
   simp only [zero_apply, Finset.sum_const_zero, Finset.smul_sum]
-  simp [smul_zero, add_zero]
+  simp [add_zero]
 additivity by
   unfold Matrix.sum
-  simp only [zero_apply, Finset.sum_const_zero, Finset.smul_sum]
+  simp only [zero_apply, Finset.sum_const_zero]
   simp [add_zero, Finset.sum_add_distrib]
 optimality by
   intros X' hX

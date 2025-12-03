@@ -56,7 +56,7 @@ def testGeoMean : Solution <|
 
 def testNorm2 : Solution <|
     optimization (x y : ℝ)
-      minimize ‖![x, y]‖
+      minimize Vec.l2Norm ![x, y]
       subject to
         c1 : 0 ≤ x
         c2 : 0 ≤ y := by

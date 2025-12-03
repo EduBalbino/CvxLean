@@ -1,4 +1,6 @@
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
 The Gram-Schmidt algorithm respects basis vectors.
@@ -6,14 +8,16 @@ The Gram-Schmidt algorithm respects basis vectors.
 
 section GramSchmidt
 
-variable (𝕜 : Type _) {E : Type _} [RCLike 𝕜]
-variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-variable {ι : Type _} [LinearOrder ι] [LocallyFiniteOrderBot ι]
-variable [IsWellOrder ι (· < · : ι → ι → Prop)]
+open Finset Submodule Module InnerProductSpace
 
-attribute [instance] IsWellOrder.toHasWellFounded
+variable (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [WellFoundedLT ι]
 
-local notation "⟪" x "," y "⟫" => @inner 𝕜 _ _ x y
+attribute [local instance] IsWellOrder.toHasWellFounded
+
+local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
+
+variable {𝕜}
 
 lemma repr_gramSchmidt_diagonal {i : ι} (b : Basis ι 𝕜 E) :
     b.repr (gramSchmidt 𝕜 b i) i = 1 := by
@@ -21,6 +25,7 @@ lemma repr_gramSchmidt_diagonal {i : ι} (b : Basis ι 𝕜 E) :
     sub_eq_self, map_sum, Finsupp.coe_finset_sum, Finset.sum_apply, Finset.sum_eq_zero]
   intros j hj
   rw [Finset.mem_Iio] at hj
-  simp [orthogonalProjection_singleton, gramSchmidt_triangular hj]
+  simp only [starProjection_singleton, map_smul, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul]
+  rw [gramSchmidt_triangular hj, mul_zero]
 
 end GramSchmidt

@@ -1,4 +1,4 @@
-import Mathlib.Data.Complex.Exponential
+import Mathlib.Analysis.Complex.Exponential
 
 /-!
 Exponential cones.

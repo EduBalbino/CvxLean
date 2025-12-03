@@ -43,7 +43,7 @@ def renameVarsBuilder (names : Array Name) : EquivalenceBuilder Unit := fun eqvE
   let vars ← decomposeDomain (← instantiateMVars eqvExpr.domainLHS)
 
   -- Create new domain.
-  let renamedVars ← manipulateVars vars names.data
+  let renamedVars ← manipulateVars vars names.toList
   let newDomain := composeDomain renamedVars
 
   -- Create new minimization expression.

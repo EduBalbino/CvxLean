@@ -39,55 +39,45 @@ unsafe def solutionDataFromProblemData (minExpr : MinimizationExpr) (data : Prob
   let cbf ← CBF.ofProblemData minExpr data sections
 
   -- Create files and run solver. The names are randomized to avoid race conditions when running the
-  -- tests.
+  -- tests. Use /tmp to avoid issues with relative paths and missing directories.
   let r ← IO.rand 0 (2 ^ 32 - 1)
-  let outputPath := s!"solver/problem{r}.sol"
-  let inputPath := s!"solver/problem{r}.cbf"
-  IO.FS.writeFile inputPath ""
-  IO.FS.writeFile outputPath ""
-  let res : Except String SolutionData ←
-    IO.FS.withFile outputPath IO.FS.Mode.read fun outHandle => do
-      IO.FS.withFile inputPath IO.FS.Mode.write fun inHandle => do
-        -- Write input.
-        inHandle.putStr (ToString.toString cbf)
+  let tempDir := System.FilePath.mk "/tmp"
+  let outputPath := (tempDir / s!"cvxlean_problem{r}.sol").toString
+  let inputPath := (tempDir / s!"cvxlean_problem{r}.cbf").toString
 
-        -- Adjust path to MOSEK.
-        let p := if let some p' := ← IO.getEnv "PATH" then
-          if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
-        else
-          mosekBinPath
+  -- Write input file.
+  IO.FS.writeFile inputPath (ToString.toString cbf)
 
-        -- Run solver.
-        let out ← IO.Process.output {
-          cmd := "mosek",
-          args := #[inputPath],
-          env := #[("PATH", p)] }
+  -- Adjust path to MOSEK.
+  let p := if let some p' := ← IO.getEnv "PATH" then
+    if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
+  else
+    mosekBinPath
 
-        if out.exitCode != 0 then
-          return Except.error ("MOSEK exited with code " ++ ToString.toString out.exitCode)
+  -- Set license path. MOSEK requires MOSEKLM_LICENSE_FILE to find the license.
+  let licPath := if mosekLicensePath != "" then some mosekLicensePath else none
 
-        -- Always show MOSEK's output.
-        let res := out.stdout
-        dbg_trace res
+  -- Run solver.
+  let out ← IO.Process.output {
+    cmd := "mosek",
+    args := #[inputPath],
+    env := #[("PATH", some p), ("MOSEKLM_LICENSE_FILE", licPath)] }
 
-        -- Read output.
-        let output ← outHandle.readToEnd
+  if out.exitCode != 0 then
+    throwSolveError ("MOSEK exited with code " ++ ToString.toString out.exitCode ++ "\n" ++ out.stderr)
 
-        -- Remove temporary files.
-        IO.FS.removeFile inputPath
-        IO.FS.removeFile outputPath
+  -- Read output file after MOSEK has written to it.
+  let output ← IO.FS.readFile outputPath
 
-        match Sol.Parser.parse output with
-        | Except.ok res =>
-            return Except.ok <| Sol.Result.toSolutionData res
-        | Except.error err =>
-            return Except.error ("MOSEK output parsing failed. " ++ err)
+  match Sol.Parser.parse output with
+  | Except.ok res =>
+      IO.FS.removeFile inputPath
+      IO.FS.removeFile outputPath
+      return Sol.Result.toSolutionData res
+  | Except.error err =>
+      throwSolveError ("MOSEK output parsing failed. " ++ err ++ "\n\nSOL FILE CONTENT:\n" ++ output)
 
-  match res with
-  | Except.ok res => return res
-  | Except.error err => throwSolveError err
-
-/-- -/
+/-- Convert solution data back to a Lean expression representing the solution point. -/
 unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : SolutionData) :
     MetaM Expr := do
   let vars ← decomposeDomainInstantiating minExpr
@@ -117,10 +107,12 @@ unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : Solution
         -- TODO: Code repetition.
         let arrayExpr ← Expr.mkArray (mkConst ``Real) exprs
         let arrayList ← mkAppM ``Array.toList #[arrayExpr]
+        -- Default value: (0 : ℝ)
+        let defaultReal := floatToReal 0.0
         let v ← withLocalDeclD `i' (← mkAppM ``Fin #[toExpr n]) fun i' => do
           let i'' := mkApp2 (mkConst ``Fin.val) (toExpr n) i'
           -- Get from generated array.
-          let r ← mkAppM ``List.get! #[arrayList, i'']
+          let r ← mkAppM ``List.getD #[arrayList, i'', defaultReal]
           mkLambdaFVars #[i'] r
 
         solPointExprArray := solPointExprArray.push v
@@ -139,12 +131,16 @@ unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : Solution
         -- List of list representing the matrix.
         let listListExpr ← mkAppM ``Array.toList #[arrayListExpr]
 
+        -- Default values
+        let defaultReal := floatToReal 0.0
+        let emptyList := mkApp (mkConst ``List.nil [levelZero]) (mkConst ``Real)
+
         let M ← withLocalDeclD `i' (← mkAppM ``Fin #[toExpr n]) fun i' => do
           let i'' := mkApp2 (mkConst ``Fin.val) (toExpr n) i'
-          let ri ← mkAppM ``List.get! #[listListExpr, i'']
+          let ri ← mkAppM ``List.getD #[listListExpr, i'', emptyList]
           withLocalDeclD `j' (← mkAppM ``Fin #[toExpr m]) fun j' => do
             let j'' := mkApp2 (mkConst ``Fin.val) (toExpr m) j'
-            let rij ← mkAppM ``List.get! #[ri, j'']
+            let rij ← mkAppM ``List.getD #[ri, j'', defaultReal]
             mkLambdaFVars #[i', j'] rij
 
         solPointExprArray := solPointExprArray.push M

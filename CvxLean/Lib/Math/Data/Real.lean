@@ -1,5 +1,5 @@
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Complex.Exponential
+import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -68,7 +68,7 @@ lemma abs_le_of_sqrt_sq_add_nonneg_le {a b c : ℝ} (hb : 0 ≤ b)
   replace h := le_trans (le_add_of_nonneg_right hb) h
   rwa [rpow_two, sq_le_sq, abs_of_nonneg hc] at h
 
-/- Lemmas used in `CvxLean.Tactic.PreDCP.RuleToTacticLibrary`. -/
+/- Lemmas used in the now deprecated `CvxLean.Tactic.PreDCP.RuleToTacticLibrary`. -/
 
 lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : x = y ↔ log x = log y :=
   ⟨fun h => by rw [h],
@@ -79,7 +79,7 @@ lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : x = y ↔ log x = log y
       Set.restrict (Set.Ioi 0) log ⟨y, hymem⟩ := by
       simp [h]
     have h := log_injOn_pos.injective heq
-    simp [Subtype.eq] at h
+    simp [] at h
     exact h⟩
 
 lemma div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) :

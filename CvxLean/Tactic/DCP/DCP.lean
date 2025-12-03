@@ -123,7 +123,7 @@ def makeConstrBackward (vcondElimMap : VCondElimMap) (newDomain : Expr) (canonPr
       let mut constrBackwardProofs := #[]
       let mut filteredCounter := 0
       for i in [:constrOpt.size] do
-        match vcondElimMap.find? i with
+        match vcondElimMap.get? i with
           | some p =>
               constrBackwardProofs := constrBackwardProofs.push p
           | none =>

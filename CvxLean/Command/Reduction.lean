@@ -100,9 +100,6 @@ def evalReductionAux (probIdStx redIdStx : TSyntax `ident) (xs : Array (Syntax �
       let psi := (← whnf redBody).getArg! 6
       trace[CvxLean.debug] "psi: {psi}"
 
-      let mut simpCtx ← Simp.Context.mkDefault
-      simpCtx := { simpCtx with config := aggressiveSimpConfig }
-
       let (.some redExt) ← getSimpExtension? `red |
         throwReductionError "could not find `red` simp extension."
 
@@ -118,7 +115,7 @@ def evalReductionAux (probIdStx redIdStx : TSyntax `ident) (xs : Array (Syntax �
       simpRedThms ← simpRedThms.addDeclToUnfold ``Eq.mp
       simpRedThms ← simpRedThms.addDeclToUnfold ``Eq.mpr
 
-      simpCtx := { simpCtx with simpTheorems := #[simpRedThms, simpEqvThms] }
+      let simpCtx ← Simp.mkContext aggressiveSimpConfig (simpTheorems := #[simpRedThms, simpEqvThms])
 
       let (res, _) ← simp psi simpCtx
 

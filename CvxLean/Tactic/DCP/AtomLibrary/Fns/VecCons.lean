@@ -26,7 +26,7 @@ declare_atom Matrix.vecCons [affine] (n : Nat)& (m : Nat)& (x : Fin n → ℝ)+
     (y : (Fin m) → (Fin n) → ℝ)+ : vecCons x y :=
 bconditions
 homogenity by
-  simp [vecCons_zero_zero, smul_zero, add_zero, smul_vecCons]
+  simp [smul_zero, add_zero]
 additivity by
   simp only [add_vecCons, add_zero]
 optimality by

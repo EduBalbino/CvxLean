@@ -261,7 +261,7 @@ variable {g : D → R}
 
 /-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
 `⟨f, [[c1, ..., cn]]⟩`. -/
-syntax (name := constrNotation) "[ [" term,* "] ]" : term
+syntax (name := constrNotation) "[[" term,* "]]" : term
 
 macro_rules
   | `([[]]) => `(fun x => True)
@@ -601,7 +601,7 @@ def eq_to_le_left {S} [Preorder S] (e : D ≃ S × E) (g : E → S) (cs' : D →
         apply h_mono (e x).2 (e x).1 _ h_feas_x.1; simp [hcx]
       simp [feasible, hcs, hcegex]
     phi_optimality := fun {x} _ => le_refl _,
-    psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp [le_of_eq] }
+    psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp }
 
 /-- Similar to `eq_to_le_left` with the monotonicity condition on `c` flipped. In this case we have
 that `P` is equivalent to `⟨f, g y ≤ s ∧ cs' x⟩`. -/
@@ -621,7 +621,7 @@ def eq_to_le_right {S} [Preorder S] (e : Equiv D (S × E)) (g : E → S) (cs' : 
         apply h_mono (e x).2 _ (e x).1 h_feas_x.1; simp [hcx]
       simp [feasible, hcs, hcegex]
     phi_optimality := fun {x} _ => le_refl _,
-    psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp [le_of_eq] }
+    psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp }
 
 /-- Changing the domain to an equivalent type yields an equivalent problem. -/
 @[equiv]

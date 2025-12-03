@@ -96,9 +96,6 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       let psi := (← whnf eqvBody).getArg! 7
       trace[CvxLean.debug] "psi: {psi}"
 
-      let mut simpCtx ← Simp.Context.mkDefault
-      simpCtx := { simpCtx with config := aggressiveSimpConfig }
-
       let (.some ext) ← getSimpExtension? `equiv |
         throwEquivalenceError "could not find `equiv` simp extension."
 
@@ -108,7 +105,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       simpThms ← simpThms.addDeclToUnfold ``Eq.mp
       simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
 
-      simpCtx := { simpCtx with simpTheorems := #[simpThms] }
+      let simpCtx ← Simp.mkContext aggressiveSimpConfig (simpTheorems := #[simpThms])
 
       let (res, _) ← simp psi simpCtx
 

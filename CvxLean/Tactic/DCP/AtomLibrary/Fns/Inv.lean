@@ -50,7 +50,7 @@ optimality by
     | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   rw [inv_eq_pow_neg_one hypos]
-  rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
+  rw [rpow_neg_one, inv_eq_one_div, div_le_iff₀ hypos]
   apply le_trans c1
   apply mul_le_mul_of_nonneg_left hy c2
 vconditionElimination
@@ -91,7 +91,7 @@ optimality by
     | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   rw [one_div_eq_pow_neg_one hypos]
-  rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
+  rw [rpow_neg_one, inv_eq_one_div, div_le_iff₀ hypos]
   apply le_trans c1
   apply mul_le_mul_of_nonneg_left hy c2
 vconditionElimination
@@ -142,7 +142,7 @@ optimality by
     | inr h => simp [← h] at c1i; linarith
   have hyipos := lt_of_lt_of_le hxipos (hy i)
   rw [one_div_eq_pow_neg_one hyipos]
-  rw [rpow_neg_one, inv_eq_one_div, div_le_iff hyipos]
+  rw [rpow_neg_one, inv_eq_one_div, div_le_iff₀ hyipos]
   apply le_trans c1i
   apply mul_le_mul_of_nonneg_left hy c2
 vconditionElimination

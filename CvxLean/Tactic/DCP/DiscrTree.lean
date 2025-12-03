@@ -11,11 +11,11 @@ open Lean
 open Meta
 
 inductive Key where
-  | const : Name → Nat → Key
-  | fvar  : FVarId → Nat → Key
-  | lit   : Literal → Key
   | star  : Key
   | other : Key
+  | lit   : Literal → Key
+  | fvar  : FVarId → Nat → Key
+  | const : Name → Nat → Key
   | arrow : Key
   | proj  : Name → Nat → Key
   deriving Inhabited, BEq, Repr
@@ -37,7 +37,7 @@ inductive Trie (α : Type) where
 structure DiscrTree (α : Type) where
   root : PersistentHashMap Key (Trie α) := {}
 
-def Key.ctorIdx : Key → Nat
+def CvxLean.Key.ctorIdx : CvxLean.Key → Nat
   | Key.star     => 0
   | Key.other    => 1
   | Key.lit ..   => 2
@@ -137,7 +137,7 @@ instance : Inhabited (DiscrTree α) where
 -/
 private def ignoreArg (a : Expr) (i : Nat) (infos : Array Meta.ParamInfo) : MetaM Bool := do
   if h : i < infos.size then
-    let info := infos.get ⟨i, h⟩
+    let info := infos[i]
     if info.isInstImplicit then
       return true
     else if info.isImplicit || info.isStrictImplicit then
@@ -199,7 +199,7 @@ partial def mkPathAux (root : Bool) (todo : Array Expr) (keys : Array Key) : Met
   if todo.isEmpty then
     return keys
   else
-    let e    := todo.back
+    let e    := todo.back!
     let todo := todo.pop
     let (k, todo) ← pushArgs root todo e
     mkPathAux false todo (keys.push k)
@@ -213,7 +213,7 @@ def mkPath (e : Expr) : MetaM (Array Key) := do
 
 private partial def createNodes (keys : Array Key) (v : α) (i : Nat) : Trie α :=
   if h : i < keys.size then
-    let k := keys.get ⟨i, h⟩
+    let k := keys[i]
     let c := createNodes keys v (i+1)
     Trie.node #[] #[(k, c)]
   else
@@ -225,7 +225,7 @@ private def insertVal [BEq α] (vs : Array α) (v : α) : Array α :=
 private partial def insertAux [BEq α] (keys : Array Key) (v : α) : Nat → Trie α → Trie α
   | i, Trie.node vs cs =>
     if h : i < keys.size then
-      let k := keys.get ⟨i, h⟩
+      let k := keys[i]
       let c := Id.run $ cs.binInsertM
           (fun a b => a.1 < b.1)
           (fun ⟨_, s⟩ => let c := insertAux keys v (i+1) s; (k, c)) -- merge with existing
@@ -299,7 +299,7 @@ private partial def getMatchLoop (todo : Array Expr) (c : Trie α) (result : Arr
     else if cs.isEmpty then
       return result
     else
-      let e     := todo.back
+      let e     := todo.back!
       let todo  := todo.pop
       let first := cs[0]! /- Recall that `Key.star` is the minimal key -/
       let (k, args) ← getMatchKeyArgs e (root := false)
@@ -367,7 +367,7 @@ where
       else if cs.isEmpty then
         return result
       else
-        let e     := todo.back
+        let e     := todo.back!
         let todo  := todo.pop
         let (k, args) ← getUnifyKeyArgs e (root := false)
         let visitStar (result : Array α) : MetaM (Array α) :=
@@ -428,7 +428,7 @@ def fold (f : σ → Array Key → α → σ) (init : σ) (t : DiscrTree α) : �
 -- TODO: inefficient since it doesn't take advantage of the Trie structure at all
 @[inline]
 def merge [BEq α] (t u : DiscrTree α) : DiscrTree α :=
-  if t.root.size < u.root.size then loop t u else loop u t
+  loop t u
   where
     @[inline]
     loop t u := t.fold (init := u) DiscrTree.insertCore

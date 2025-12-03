@@ -31,7 +31,11 @@ def mkFloat (n : Nat) : Expr :=
 
 /- Helper function to generate (i : Fin n) as an expression. -/
 def mkFinIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
-  return mkApp2 (mkConst ``Fin.ofNat) (mkNatLit n.pred) (mkNatLit i)
+  -- Use OfNat instance to create Fin n from natural number i
+  let finTy := mkApp (mkConst ``Fin) (mkNatLit n)
+  let iExpr := mkNatLit i
+  let inst ← synthInstance (mkApp2 (mkConst ``OfNat [levelZero]) finTy iExpr)
+  return mkApp3 (mkConst ``OfNat.ofNat [levelZero]) finTy iExpr inst
 
 /- Helper function to generate (i : ty) where [OfNat ty i] as an expression. -/
 def mkOfNatExpr (i : Nat) (ty : Expr) : MetaM Expr := do
@@ -238,9 +242,9 @@ unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     let mut floatCoeff ← evalFloatMatrix coeff
     for i in [:floatCoeff.size] do
       for j in [:floatCoeff.size] do
-        let adjust := (const.get! i).get! j
-        let val := (floatCoeff.get! i).get! j
-        floatCoeff := floatCoeff.set! i ((floatCoeff.get! i).set! j (val - adjust))
+        let adjust := (const[i]!)[j]!
+        let val := (floatCoeff[i]!)[j]!
+        floatCoeff := floatCoeff.set! i ((floatCoeff[i]!).set! j (val - adjust))
     coeffs := coeffs.push floatCoeff
   return (coeffs, const)
 

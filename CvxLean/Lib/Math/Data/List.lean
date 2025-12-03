@@ -16,7 +16,7 @@ def toVec (x : List α) : Fin x.length → α :=
   fun i => List.get x ⟨i, i.2⟩
 
 def finRange' (d n : Nat) : List (Fin n) :=
-  if hn : 0 < n then (List.range d).map (Fin.ofNat' · hn) else []
+  if _hn : 0 < n then (List.range d).map (fun i => ⟨i % n, Nat.mod_lt i (Nat.pos_of_ne_zero (Nat.ne_of_gt _hn))⟩) else []
 
 def sum' [Zero α] [Add α] (L : List α) : α :=
   L.foldl (· + ·) 0
