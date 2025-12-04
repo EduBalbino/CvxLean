@@ -133,6 +133,53 @@ end CBF
 
 /-! ## Pure IO Solver -/
 
+/-- A MOSEK parameter (name-value pair for the .par file).
+    See https://docs.mosek.com/latest/toolbox/parameters.html for available parameters.
+
+    **Examples:**
+    - `MosekParam.mk "MSK_DPAR_INTPNT_CO_TOL_PFEAS" "1e-10"` (primal feasibility tolerance)
+    - `MosekParam.mk "MSK_DPAR_INTPNT_CO_TOL_DFEAS" "1e-10"` (dual feasibility tolerance)
+    - `MosekParam.mk "MSK_DPAR_INTPNT_CO_TOL_REL_GAP" "1e-10"` (relative gap tolerance)
+    - `MosekParam.mk "MSK_IPAR_NUM_THREADS" "4"` (number of threads)
+    - `MosekParam.mk "MSK_IPAR_LOG" "0"` (disable logging) -/
+structure MosekParam where
+  /-- MOSEK parameter name (e.g., "MSK_DPAR_INTPNT_CO_TOL_PFEAS"). -/
+  name : String
+  /-- Parameter value as string (e.g., "1e-10" or "4"). -/
+  value : String
+  deriving Repr, Inhabited, BEq
+
+namespace MosekParam
+
+/-- Create a double (floating-point) parameter. -/
+def double (name : String) (value : Float) : MosekParam :=
+  { name, value := toString value }
+
+/-- Create an integer parameter. -/
+def int (name : String) (value : Int) : MosekParam :=
+  { name, value := toString value }
+
+/-- Create a string parameter. -/
+def str (name : String) (value : String) : MosekParam :=
+  { name, value }
+
+/-- Common tolerance parameters. -/
+def tolPFeas (tol : Float) : MosekParam := double "MSK_DPAR_INTPNT_CO_TOL_PFEAS" tol
+def tolDFeas (tol : Float) : MosekParam := double "MSK_DPAR_INTPNT_CO_TOL_DFEAS" tol
+def tolRelGap (tol : Float) : MosekParam := double "MSK_DPAR_INTPNT_CO_TOL_REL_GAP" tol
+def tolInfeas (tol : Float) : MosekParam := double "MSK_DPAR_INTPNT_CO_TOL_INFEAS" tol
+def tolMuRed (tol : Float) : MosekParam := double "MSK_DPAR_INTPNT_CO_TOL_MU_RED" tol
+
+/-- Common integer parameters. -/
+def numThreads (n : Nat) : MosekParam := int "MSK_IPAR_NUM_THREADS" n
+def logLevel (level : Nat) : MosekParam := int "MSK_IPAR_LOG" level
+def maxIterations (n : Nat) : MosekParam := int "MSK_IPAR_INTPNT_MAX_ITERATIONS" n
+
+/-- Format as a line in a .par file. -/
+def toParLine (p : MosekParam) : String := s!"{p.name} {p.value}"
+
+end MosekParam
+
 /-- Configuration for the MOSEK solver. -/
 structure MosekConfig where
   /-- Path to MOSEK binary directory. If empty, uses system PATH. -/
@@ -143,10 +190,48 @@ structure MosekConfig where
   tempDir : System.FilePath := "/tmp"
   /-- Whether to keep temporary files after solving (useful for debugging). -/
   keepTempFiles : Bool := false
+  /-- MOSEK parameters to pass via .par file.
+      See https://docs.mosek.com/latest/toolbox/parameters.html -/
+  params : Array MosekParam := #[]
   deriving Repr, Inhabited
 
 /-- Default MOSEK configuration using paths from `Path.lean`. -/
 def MosekConfig.default : MosekConfig := {}
+
+namespace MosekConfig
+
+/-- Add a parameter to the config. -/
+def addParam (cfg : MosekConfig) (p : MosekParam) : MosekConfig :=
+  { cfg with params := cfg.params.push p }
+
+/-- Add multiple parameters to the config. -/
+def addParams (cfg : MosekConfig) (ps : Array MosekParam) : MosekConfig :=
+  { cfg with params := cfg.params ++ ps }
+
+/-- Set all tolerances to the same value. -/
+def withTolerances (cfg : MosekConfig) (tol : Float) : MosekConfig :=
+  cfg.addParams #[
+    MosekParam.tolPFeas tol,
+    MosekParam.tolDFeas tol,
+    MosekParam.tolRelGap tol
+  ]
+
+/-- Set tight tolerances (1e-10). -/
+def tight : MosekConfig :=
+  MosekConfig.default.withTolerances 1e-10
+
+/-- Set very tight tolerances (1e-12). -/
+def veryTight : MosekConfig :=
+  MosekConfig.default.withTolerances 1e-12
+
+/-- Generate the .par file content. -/
+def toParFileContent (cfg : MosekConfig) : String :=
+  cfg.params.foldl (fun acc p => acc ++ p.toParLine ++ "\n") ""
+
+/-- Check if the config has any parameters. -/
+def hasParams (cfg : MosekConfig) : Bool := !cfg.params.isEmpty
+
+end MosekConfig
 
 /-- Result of a solve operation. -/
 inductive SolveResult
@@ -237,16 +322,23 @@ def solveProblemDataIO (data : ProblemData) (sections : ScalarAffineSections) (t
     config.binPath
   let licEnv := if config.licensePath != "" then some config.licensePath else none
 
-  -- Run MOSEK
+  -- Write parameter file if config has params
+  let paramPath := (config.tempDir / s!"cvxlean_io_problem{r}.par").toString
+  if config.hasParams then
+    IO.FS.writeFile paramPath config.toParFileContent
+
+  -- Run MOSEK with parameter file if specified
+  let mosekArgs := if config.hasParams then #["-p", paramPath, inputPath] else #[inputPath]
   let out ← IO.Process.output {
     cmd := "mosek",
-    args := #[inputPath],
+    args := mosekArgs,
     env := #[("PATH", some pathEnv), ("MOSEKLM_LICENSE_FILE", licEnv)]
   }
 
   if out.exitCode != 0 then
     unless config.keepTempFiles do
       try IO.FS.removeFile inputPath catch _ => pure ()
+      if config.hasParams then try IO.FS.removeFile paramPath catch _ => pure ()
     return .mosekError out.exitCode out.stderr
 
   -- Read and parse solution
@@ -256,6 +348,7 @@ def solveProblemDataIO (data : ProblemData) (sections : ScalarAffineSections) (t
   unless config.keepTempFiles do
     try IO.FS.removeFile inputPath catch _ => pure ()
     try IO.FS.removeFile outputPath catch _ => pure ()
+    if config.hasParams then try IO.FS.removeFile paramPath catch _ => pure ()
 
   match Sol.Parser.parse output with
   | .ok res => return .success (Sol.Result.toSolutionData res)
