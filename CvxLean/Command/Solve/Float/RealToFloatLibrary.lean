@@ -1,5 +1,4 @@
 import CvxLean.Command.Solve.Float.RealToFloatCmd
-import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 
 /-!
 # Conversion of Real to Float (library)
@@ -224,14 +223,5 @@ add_real_to_float (N n : ℕ) : @covarianceMatrix N n :=
   @Matrix.Computable.covarianceMatrix N n
 
 end CovarianceEstimation
-
-section PosDef
-
-def posDef.epsilonFloat : Float := 1e-8
-
-add_real_to_float : posDef.epsilon :=
-  posDef.epsilonFloat
-
-end PosDef
 
 end CvxLean

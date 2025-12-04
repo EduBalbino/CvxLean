@@ -90,16 +90,6 @@ optimality le_refl _
 
 end PSDCone
 
-/- Shifted positive semi-definite cone atom (for PosDef constraints).
-   PSDConeShifted ε A represents (A - ε•I) ≽ 0, used to enforce λ_min(A) ≥ ε > 0. -/
-section PSDConeShifted
-
-declare_atom Matrix.PSDConeShifted [cone] (n : ℕ)& (ε : ℝ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? :
-    Matrix.PSDConeShifted ε A :=
-optimality le_refl _
-
-end PSDConeShifted
-
 /- Trivial cone atom. -/
 section Trivial
 

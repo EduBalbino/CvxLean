@@ -347,29 +347,6 @@ unsafe def determineCoeffsFromExpr (minExpr : MinimizationExpr) :
               let (a, b) ← determineScalarCoeffsAux e p floatDomain
               data := data.addZeroConstraint a b
               idx := idx + 1
-      | .app (.app (.app (.app (.app (.const ``Real.Matrix.PSDConeShifted _) mty) _) _) _eps) e => do
-          let some unfolded ← unfoldDefinition? c | throwCoeffsError "failed to unfold PSDConeShifted"
-          let shiftedMatrix ← match unfolded with
-            | .app f shifted =>
-              if f.isAppOf ``Matrix.PosSemidef then pure shifted
-              else throwCoeffsError "PSDConeShifted unfold: expected PosSemidef app, got {unfolded}"
-            | _ => throwCoeffsError "PSDConeShifted unfold: expected app, got {unfolded}"
-          let shiftedMatrix ← realToFloat shiftedMatrix
-          let res ← determineMatrixCoeffsAux shiftedMatrix p floatDomain
-          let m := res.2.size
-          data := data.addMatrixAffineConstraint res.1 res.2
-          let e ← realToFloat e
-          for i in [:m] do
-            for j in [i+1:m] do
-              let ei := mkApp e (← mkOfNatExpr i mty)
-              let ej := mkApp e (← mkOfNatExpr j mty)
-              let eij := mkApp ei (← mkOfNatExpr j mty)
-              let eji := mkApp ej (← mkOfNatExpr i mty)
-              let e ← mkAppM ``Sub.sub #[eij, eji]
-              let e ← realToFloat e
-              let (a, b) ← determineScalarCoeffsAux e p floatDomain
-              data := data.addZeroConstraint a b
-              idx := idx + 1
       | _ => throwCoeffsError "no match ({c})."
       -- New group, add idx.
       if !isTrivial then

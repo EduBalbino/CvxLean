@@ -12,26 +12,6 @@ Note: Many lemmas that were previously here have been upstreamed to Mathlib.
 This file now contains only supplementary results.
 -/
 
-namespace CvxLean
-
-/-! ## PosDef Atom Configuration -/
-
-/-- Exponent for PosDef epsilon: ε = 10^(-n). Default: 8. -/
-register_option posDef.epsilonExp : Nat := {
-  defValue := 8
-  descr := "Exponent n for PosDef epsilon: ε = 10^(-n)"
-}
-
-/-- The epsilon value for PosDef relaxation. -/
-def posDef.epsilon : ℝ := 1e-8
-
-/-- Proof that epsilon is positive. -/
-lemma posDef.epsilon_pos : 0 < posDef.epsilon := by
-  unfold posDef.epsilon
-  norm_num
-
-end CvxLean
-
 namespace Matrix
 
 variable {m n : Type*} [Fintype m] [Fintype n]
@@ -78,27 +58,5 @@ lemma PosSemiDef.IsSymm {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A)
   have := congrFun (congrFun hH i) j
   simp only [transpose_apply, map_apply, star_trivial] at this
   exact this
-
-/-! ## PosDef ↔ PosSemidef relaxation -/
-
-/-- If `(A - ε • 1).PosSemidef` for some `ε > 0`, then `A.PosDef`. -/
-lemma PosDef_of_PosSemidef_sub_smul_one {n : Type*} [Fintype n] [DecidableEq n]
-    {A : Matrix n n ℝ} {ε : ℝ} (hε : 0 < ε) (hA : (A - ε • (1 : Matrix n n ℝ)).PosSemidef) :
-    A.PosDef := by
-  have hAH : A.IsHermitian := by
-    have h := hA.isHermitian
-    simp only [IsHermitian, conjTranspose_sub, conjTranspose_smul,
-      conjTranspose_one, star_trivial] at h ⊢
-    exact sub_left_injective h
-  refine ⟨hAH, fun x hx => ?_⟩
-  have key : star x ⬝ᵥ mulVec A x =
-      star x ⬝ᵥ mulVec (A - ε • 1) x + ε * (star x ⬝ᵥ x) := by
-    simp only [sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub, dotProduct_smul, star_trivial,
-      smul_eq_mul]
-    ring
-  rw [key]
-  have h1 : 0 ≤ star x ⬝ᵥ mulVec (A - ε • 1) x := hA.2 x
-  have h2 : 0 < star x ⬝ᵥ x := dotProduct_star_self_pos_iff.mpr hx
-  linarith [mul_pos hε h2]
 
 end Matrix
